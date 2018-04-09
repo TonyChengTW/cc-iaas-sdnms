@@ -29,6 +29,14 @@
 ----------------------------------------------
 ```
 
+Lifecycle
+
+```
+AP mode -> Master fails -> Auto-failover (promote the slave to master) -> Manually turn the failed master to new slave -> |
+^                                                                                                                         |
+|-------------------------------------------------------------------------------------------------------------------------|
+```
+
 # Milestones
 
 1. Prototype of AP mode stateful RESTful API Server (1 ~ 2 weeks)
@@ -42,11 +50,16 @@ vip : keepalived
 
 RESTful API Framework : Falcon v1.4.x (TBD)
 
-DB : SQLite (TBD)
+DB replication & failover solution (TBD)
 
-sync : rynsc (TBD)
+* SQLite + rsync
+* MySQL + mysqlfailover
 
 OS : CentOS 7.x (TBD)
+
+References
+
+* Why don't we use rsync + SQLite as our DB replication & failover solution? see https://serverfault.com/questions/89329/rsync-sqlite-database
 
 # Milestone 2 :: Implementation of Backends client librabry
 
@@ -58,14 +71,14 @@ Backends List
 * 1 Neo?
 * 1 ~ N Neutron Server?
 
-# Milestone 3 :: RESTful API Spec and DB Schema
+# Milestone 3 :: RESTful API Spec, DB Schema, Sub-sequence APIs
 
-API Category
+RESTful API Category
 
 * init 
 * user
 
-CMP Use Cases
+CMP Use Cases and Sub-sequence APIs (one case one sequence diagram)
 
 * ?
 
