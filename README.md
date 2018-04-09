@@ -31,9 +31,9 @@
 
 # Milesstones
 
-1. Prototype of AP mode stateful RESTful API Server
-2. Implementation of Backends client librabry
-3. RESTful API Spec and DB Schema
+1. Prototype of AP mode stateful RESTful API Server (1 ~ 2 weeks)
+2. Implementation of Backends client librabry (1 ~ 2 weeks)
+3. RESTful API Spec and DB Schema (4 ~ 8 weeks)
 
 # Milestone 1 :: AP mode stateful RESTful API Server
 
