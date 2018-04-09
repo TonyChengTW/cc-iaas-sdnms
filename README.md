@@ -11,14 +11,14 @@
                 /           \
             /                   \
         /                           \
------------------            -----------------
-| RESTful API   |            | RESTful API   |
-|               |            |               |
-| [ Active ]    | -> sync -> | [ Standby ]   |
-|               |            |               |
-|-----          |            |-----          |
-| DB |          |            | DB |          |
------------------            -----------------
+-------------------            -------------------
+| RESTful API -|  |            | RESTful API -|  |
+|              |  |            |              |  |
+| [ Active ]   |  | -> sync -> | [ Standby ]  |  |
+|              |  |            |              |  |
+|-----         |  |            |-----         |  |
+| DB | <-------|  |            | DB | <-------|  |
+-------------------            -------------------
     \                               /
         \                       /
             \               /
@@ -52,7 +52,7 @@ RESTful API Framework : Falcon v1.4.x (TBD)
 
 DB replication & failover solution (TBD)
 
-* SQLite + rsync
+* ~~SQLite + rsync~~
 * MySQL + mysqlfailover
 
 OS : CentOS 7.x (TBD)
