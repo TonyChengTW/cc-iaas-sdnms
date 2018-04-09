@@ -54,6 +54,7 @@ DB replication & failover solution (TBD)
 
 * ~~SQLite + rsync~~
 * MySQL + mysqlfailover
+* MySQL + keepalived script
 
 OS : CentOS 7.x (TBD)
 
