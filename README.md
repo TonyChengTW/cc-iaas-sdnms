@@ -69,8 +69,8 @@ Web Server : Apache httpd v2.4.6
 DB replication & failover solution (TBD)
 
 * ~~SQLite + rsync~~
-* MySQL + mysqlfailover
-* MySQL + keepalived script
+* MySQL + MySQL Replication + mysqlfailover
+* MySQL + MySQL Replication + keepalived script
 
 OS : CentOS v7.4
 
