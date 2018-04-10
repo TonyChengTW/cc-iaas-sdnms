@@ -34,7 +34,7 @@ Lifecycle
 ```
 AP mode -> Master fails (unplanned outage) -> Auto-failover (promote the slave to master) -> Manually turn the failed master to new slave -> |
 ^       \                                   /                                                                                                |
-|        \ -> Planned outage            -> /                                                                                                 |
+|        \ -> Planned outage for master -> /                                                                                                 |
 |                                                                                                                                            |
 |--------------------------------------------------------------------------------------------------------------------------------------------|
 ```
