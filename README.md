@@ -70,6 +70,7 @@ DB replication & failover solution (TBD)
 
 * ~~SQLite + rsync~~
 * MySQL + MySQL Transaction-based Semi-synchronous Replication + mysqlfailover
+* MySQL + MySQL Transaction-based Semi-synchronous Replication + keepalived script
   * To make crash safe slave work, you have to use InnoDB storage engine only.
   * To execute replicated events in parallel as long as data is split across several databases.
   * Topology : master(rw) - - semi-sync - - > backup master(ro)
