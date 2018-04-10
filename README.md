@@ -69,8 +69,10 @@ Web Server : Apache httpd v2.4.6
 DB replication & failover solution (TBD)
 
 * ~~SQLite + rsync~~
-* MySQL + MySQL Replication + mysqlfailover
-* MySQL + MySQL Semi-synchronous Replication + keepalived script
+* MySQL + MySQL Transaction-based Replication + mysqlfailover
+  * To make crash safe slave work, you have to use InnoDB storage engine only.
+  * To execute replicated events in parallel as long as data is split across several databases.
+* MySQL + MySQL Classic Semi-synchronous Replication + keepalived script
 * MariaDB Replication Manager
 
 OS : CentOS v7.4
