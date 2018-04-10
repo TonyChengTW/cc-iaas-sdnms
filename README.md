@@ -76,7 +76,8 @@ OS : CentOS v7.4
 
 References
 
-* Why don't we use rsync + SQLite as our DB replication & failover solution? see https://serverfault.com/questions/89329/rsync-sqlite-database
+* [Why don't we use rsync + SQLite as our DB replication & failover solution?](https://serverfault.com/questions/89329/rsync-sqlite-database)
+* [Two Node Planned Manual Failover for the MySQL Database Administrator](https://www.databasejournal.com/features/mysql/article.php/3890596/Two-Node-Planned-Manual-Failover-for-the-MySQL-Database-Administrator.htm)
 
 # Milestone 2 :: Implementation of backends client librabry
 
