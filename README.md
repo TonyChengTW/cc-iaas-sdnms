@@ -60,6 +60,8 @@ Notice
 
 vip : keepalived
 
+Programming Language : python 2.7.x (TBD)
+
 RESTful API Framework : Falcon v1.4.x (TBD)
 
 DB replication & failover solution (TBD)
