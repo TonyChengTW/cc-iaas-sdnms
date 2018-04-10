@@ -70,7 +70,7 @@ DB replication & failover solution (TBD)
 
 * ~~SQLite + rsync~~
 * MySQL + MySQL Replication + mysqlfailover
-* MySQL + MySQL Replication + keepalived script
+* MySQL + MySQL Semi-synchronous Replication + keepalived script
 * MariaDB Replication Manager
 
 OS : CentOS v7.4
