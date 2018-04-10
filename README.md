@@ -32,10 +32,17 @@
 Lifecycle
 
 ```
-AP mode -> Master fails -> Auto-failover (promote the slave to master) -> Manually turn the failed master to new slave -> |
-^                                                                                                                         |
-|-------------------------------------------------------------------------------------------------------------------------|
+AP mode -> Master fails (unplanned outage) -> Auto-failover (promote the slave to master) -> Manually turn the failed master to new slave -> |
+^       \                                   /                                                                                                |
+|        \ -> Planned outage            -> /                                                                                                 |
+|                                                                                                                                            |
+|--------------------------------------------------------------------------------------------------------------------------------------------|
 ```
+
+Notice
+
+* The unplanned outage may lose 1 or 2 transacation(s).
+* CMP need implement some sort of retry during the failover.
 
 # Milestones
 
