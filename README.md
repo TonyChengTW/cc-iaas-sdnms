@@ -90,6 +90,10 @@ Backends List
 * 1 Neo?
 * 1 ~ N Neutron Server?
 
+Note
+
+* use super administrator privilege to access backend API
+
 # Milestone 3 :: Definition of CMP use cases, RESTful API spec, DB schema, backend API
 
 CMP Use Cases
