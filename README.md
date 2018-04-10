@@ -51,12 +51,12 @@ Notice
 
 # Milestones
 
-1. Prototype of AP mode stateful RESTful API Server (1 ~ 2 weeks)
-2. Implementation of Backends client librabry (1 ~ 2 weeks)
-3. Definition of CMP Use Cases, RESTful API Spec, DB Schema, Backend APIs (4 ~ 8 weeks)
+1. Prototype of AP mode stateful RESTful API server (1 ~ 2 weeks)
+2. Implementation of backends client librabry (1 ~ 2 weeks)
+3. Definition of CMP use cases, RESTful API spec, DB schema, backend API (4 ~ 8 weeks)
 4. Implementation of RESTful API (2 ~ 4 weeks)
 
-# Milestone 1 :: Prototype of AP mode stateful RESTful API Server
+# Milestone 1 :: Prototype of AP mode stateful RESTful API server
 
 vip : keepalived
 
@@ -78,7 +78,7 @@ References
 
 * Why don't we use rsync + SQLite as our DB replication & failover solution? see https://serverfault.com/questions/89329/rsync-sqlite-database
 
-# Milestone 2 :: Implementation of Backends client librabry
+# Milestone 2 :: Implementation of backends client librabry
 
 Backends List
 
@@ -88,7 +88,7 @@ Backends List
 * 1 Neo?
 * 1 ~ N Neutron Server?
 
-# Milestone 3 :: Definition of CMP Use Cases, RESTful API Spec, DB Schema, Backend APIs
+# Milestone 3 :: Definition of CMP use cases, RESTful API spec, DB schema, backend API
 
 CMP Use Cases
 
@@ -110,7 +110,7 @@ DB Schema
 * TBD
 * TBD
 
-Backend APIs ~~(one use case one sequence diagram)~~
+Backend API ~~(one use case one sequence diagram)~~
 
 * TBD
 * TBD
