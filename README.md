@@ -53,10 +53,10 @@ Notice
 
 1. Prototype of AP mode stateful RESTful API Server (1 ~ 2 weeks)
 2. Implementation of Backends client librabry (1 ~ 2 weeks)
-3. RESTful API Spec and DB Schema (4 ~ 8 weeks)
+3. Definition of CMP Use Cases, RESTful API Spec, DB Schema, Backend APIs (4 ~ 8 weeks)
 4. Implementation of RESTful API (2 ~ 4 weeks)
 
-# Milestone 1 :: AP mode stateful RESTful API Server
+# Milestone 1 :: Prototype of AP mode stateful RESTful API Server
 
 vip : keepalived
 
@@ -84,15 +84,32 @@ Backends List
 * 1 Neo?
 * 1 ~ N Neutron Server?
 
-# Milestone 3 :: Definition of RESTful API Spec, DB Schema, Backend APIs
+# Milestone 3 :: Definition of CMP Use Cases, RESTful API Spec, DB Schema, Backend APIs
 
-RESTful API Category
+CMP Use Cases
 
-* init 
-* user
+* TBD
+* TBD
+* TBD
 
-CMP Use Cases and Subsequent APIs ~~(one case one sequence diagram)~~
+RESTful API Spec
 
-* ?
+* Category 1 :: init .. priority 2 (out of scope)
+* Category 2 :: user .. priority 1
+  * TBD
+  * TBD
+  * TBD
+
+DB Schema
+
+* TBD
+* TBD
+* TBD
+
+Backend APIs ~~(one use case one sequence diagram)~~
+
+* TBD
+* TBD
+* TBD
 
 # Milestone 4 :: Implementation of RESTful API
