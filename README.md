@@ -1,3 +1,8 @@
+# Scope
+
+* relay API call from CMP to backends (one to one. DO NOT issue subsequent APIs i.e. DO NOT control workflow !!!)
+* record the relationship between CMP object and backend object
+
 # Arch.
 
 ```
@@ -79,14 +84,14 @@ Backends List
 * 1 Neo?
 * 1 ~ N Neutron Server?
 
-# Milestone 3 :: RESTful API Spec, DB Schema, Sub-sequence APIs
+# Milestone 3 :: Definition of RESTful API Spec, DB Schema, Backend APIs
 
 RESTful API Category
 
 * init 
 * user
 
-CMP Use Cases and Sub-sequence APIs (one case one sequence diagram)
+CMP Use Cases and Subsequent APIs ~~(one case one sequence diagram)~~
 
 * ?
 
