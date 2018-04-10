@@ -60,9 +60,11 @@ Notice
 
 vip : keepalived
 
-Programming Language : python 2.7.5
+Programming Language : python v2.7.5
 
 RESTful API Framework : Falcon v1.4.1
+
+Web Server : Apache httpd v2.4.6
 
 DB replication & failover solution (TBD)
 
@@ -70,7 +72,7 @@ DB replication & failover solution (TBD)
 * MySQL + mysqlfailover
 * MySQL + keepalived script
 
-OS : CentOS 7.4
+OS : CentOS v7.4
 
 References
 
