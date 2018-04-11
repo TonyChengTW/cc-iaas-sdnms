@@ -48,6 +48,7 @@ Notice
 
 * The unplanned outage may lose 1 or 2 transacation(s).
 * CMP need implement some sort of retry during the failover.
+* RESTful API layer need issue a query to confirm whether write commit is replicated to slave or not during the failover
 
 # Milestones
 
