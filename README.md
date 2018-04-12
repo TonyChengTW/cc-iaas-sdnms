@@ -60,9 +60,13 @@ Notice
 # Milestone 1 :: Prototype of AP mode stateful RESTful API server
 
 * vip : Keepalived v1.3.5 (the built-in python version of CentOS v7.4)
-* RESTful API framework : Falcon v1.4.1
+* RESTful API
   * Programming language : Python v2.7.5 (the built-in Python version of CentOS v7.4)
+  * Framework : Falcon v1.4.1  
+  * 3rd-party library :
+      * https://pypi.python.org/pypi/SQLAlchemy/1.2.6
   * Web server : Apache httpd v2.4.6 (the built-in httpd version of CentOS v7.4)
+      * mod_wsgi 
 * DB replication & failover solution
   * ~~SQLite + rsync~~
   * MariaDB v10.2 + MariaDB transaction-based async replication + Keepalived tracking script + Keepalived notification script
