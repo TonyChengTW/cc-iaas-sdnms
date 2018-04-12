@@ -62,7 +62,8 @@ Notice
 * vip : Keepalived v1.3.5 (the current version provided by CentOS v7.4 yum repo)
 * RESTful API
   * Programming language : Python v2.7.5 (the built-in Python version of CentOS v7.4)
-  * Framework : Falcon v1.4.1 (latest) (the same framework used in monasca-api project)
+  * Framework : Falcon (the same framework used in monasca-api project)
+      * https://pypi.python.org/pypi/falcon/1.4.1 (latest)
   * 3rd-party library :
       * https://pypi.python.org/pypi/SQLAlchemy/1.2.6 (latest)
       * https://pypi.python.org/pypi/requests/2.18.4 (latest)
