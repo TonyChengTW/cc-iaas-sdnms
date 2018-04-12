@@ -4,7 +4,7 @@ from falcon.media.validators.jsonschema import validate
 
 from sqlalchemy.exc import IntegrityError
 
-from cc_iaas_sdnms.db import models
+from cc_iaas_sdnms.models import models
 from cc_iaas_sdnms.resources import BaseResource
 from cc_iaas_sdnms.schemas import load_schema
 
