@@ -67,6 +67,7 @@ Notice
   * 3rd-party library :
       * https://pypi.python.org/pypi/SQLAlchemy/1.2.6 (latest)
       * https://pypi.python.org/pypi/requests/2.18.4 (latest)
+      * https://pypi.python.org/pypi/prometheus_client/0.2.0 (lastest) (optional)
   * Web server : Apache httpd v2.4.6 (the current version provided by CentOS v7.4 yum repo)
       * mod_wsgi 
 * DB replication & failover solution
