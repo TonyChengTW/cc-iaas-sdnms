@@ -1,0 +1,9 @@
+# see http://docs.openstack.org/infra/bindep/ for additional information.
+
+# A runtime dependency
+keepalived [platform:centos]
+httpd [platform:centos]
+MariaDB-server [platform:centos]
+MariaDB-client [platform:centos]
+
+# A build time dependency
