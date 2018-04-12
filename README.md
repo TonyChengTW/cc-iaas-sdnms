@@ -81,6 +81,10 @@ References
 
 * [Why don't we use rsync + SQLite as our DB replication & failover solution?](https://serverfault.com/questions/89329/rsync-sqlite-database)
 * [Two Node Planned Manual Failover for the MySQL Database Administrator](https://www.databasejournal.com/features/mysql/article.php/3890596/Two-Node-Planned-Manual-Failover-for-the-MySQL-Database-Administrator.htm)
+* Who and how use Falcon framework
+  * https://github.com/openstack/monasca-api
+  * https://github.com/openstack/monasca-events-api
+  * https://github.com/openstack/monasca-log-api
 
 # Milestone 2 :: Implementation of backends client librabry
 
