@@ -59,14 +59,14 @@ Notice
 
 # Milestone 1 :: Prototype of AP mode stateful RESTful API server
 
-* vip : Keepalived v1.3.5 (the built-in python version of CentOS v7.4)
+* vip : Keepalived v1.3.5 (the current version provided by CentOS v7.4 yum repo)
 * RESTful API
   * Programming language : Python v2.7.5 (the built-in Python version of CentOS v7.4)
-  * Framework : Falcon v1.4.1  
+  * Framework : Falcon v1.4.1  (the same framework used in monasca-api project)
   * 3rd-party library :
-      * https://pypi.python.org/pypi/SQLAlchemy/1.2.6
-      * https://pypi.python.org/pypi/requests/2.18.4
-  * Web server : Apache httpd v2.4.6 (the built-in httpd version of CentOS v7.4)
+      * https://pypi.python.org/pypi/SQLAlchemy/1.2.6 (latest)
+      * https://pypi.python.org/pypi/requests/2.18.4 (latest)
+  * Web server : Apache httpd v2.4.6 (the current version provided by CentOS v7.4 yum repo)
       * mod_wsgi 
 * DB replication & failover solution
   * ~~SQLite + rsync~~
