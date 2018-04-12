@@ -59,13 +59,12 @@ Notice
 
 # Milestone 1 :: Prototype of AP mode stateful RESTful API server
 
-vip : keepalived v1.3.5 (the built-in python version of CentOS v7.4)
+vip : Keepalived v1.3.5 (the built-in python version of CentOS v7.4)
 
-Programming Language : python v2.7.5 (the built-in python version of CentOS v7.4)
+RESTful API framework : Falcon v1.4.1
 
-RESTful API Framework : Falcon v1.4.1
-
-Web Server : Apache httpd v2.4.6 (the built-in httpd version of CentOS v7.4)
+* Programming language : python v2.7.5 (the built-in python version of CentOS v7.4)
+* Web server : Apache httpd v2.4.6 (the built-in httpd version of CentOS v7.4)
 
 DB replication & failover solution
 
