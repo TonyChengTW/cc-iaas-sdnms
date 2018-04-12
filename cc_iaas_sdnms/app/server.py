@@ -2,28 +2,32 @@
 import os
 import falcon
 
-import cc_iaas_sdnms.util.simport
 from oslo_config import cfg
 from oslo_log import log
 
 from cc_iaas_sdnms.db.manager import DBManager
 from cc_iaas_sdnms.middleware.context import ContextMiddleware
+from cc_iaas_sdnms.util import simport
 from cc_iaas_sdnms.resources import scores
+from cc_iaas_sdnms import config
 
+LOG = log.getLogger(__name__)
+CONF = config.CONF
 
-def launch(conf):
+def launch():
     config.parse_args()
 
-    app = falcon.API(request_type=request.Request)
+    mgr = DBManager(cfg.CONF.database.url)
+    mgr.setup()
 
-    scores = simport.load(cfg.CONF.dispatcher.metrics)()
+    app = falcon.API()
+    scores = simport.load(cfg.CONF.dispatcher.scores)(mgr)
     app.add_route("/scores", scores)
 
-
-    # LOG.debug('Dispatcher drivers have been added to the routes!')
+    LOG.debug('Dispatcher drivers have been added to the routes!')
     return app
 
-def get_wsgi_app(config_base_path=None, **kwargs):
+def get_wsgi_app():
 
     return launch()
 
