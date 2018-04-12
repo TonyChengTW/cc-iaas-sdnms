@@ -65,6 +65,7 @@ Notice
   * Framework : Falcon v1.4.1  
   * 3rd-party library :
       * https://pypi.python.org/pypi/SQLAlchemy/1.2.6
+      * https://pypi.python.org/pypi/requests/2.18.4
   * Web server : Apache httpd v2.4.6 (the built-in httpd version of CentOS v7.4)
       * mod_wsgi 
 * DB replication & failover solution
