@@ -1,12 +1,19 @@
 # Project structure
 
+Q: How do we organize the backend?
+
+```
+TBD
+
+e.g., backend connection string (endpoint and credential) vs. backbend plugin list
+```
+
 Q: How do we organize the configuration file?
 
 ```
 TBD
 
 e.g., log file level and log file location
-e.g., backend connection string (endpoint and credential) vs. backbend plugin list
 e.g., db connection string (endpoint and credential)
 
 Method 1 :: .ini + oslo.config
