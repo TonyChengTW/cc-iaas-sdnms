@@ -37,13 +37,15 @@ mod app/server.py
 Q: How do we organize the middleware code?
 
 ```
-?
+e.g.,
+
+add middleware/my_middleware.py
 ```
 
 Q: How do we load the middleware code?
 
 ```
-?
+mod app/server.py
 ```
 
 Q: How do we use the logging function?
