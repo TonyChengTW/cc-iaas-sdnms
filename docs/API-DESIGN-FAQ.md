@@ -22,13 +22,16 @@ Q: How do we load the configuration file?
 Q: How do we organize the routing code?
 
 ```
-?
+e.g.,
+
+add resources/my_resource.py
 ```
 
 Q: How do we load the routing code?
 
 ```
-?
+mod conf/dispatcher.py
+mod app/server.py
 ```
 
 Q: How do we organize the middleware code?
