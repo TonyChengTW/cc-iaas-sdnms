@@ -6,7 +6,7 @@ Q: How do we organize the configuration file?
 TBD
 
 e.g., log file level and log file location
-e.g., backend connection string (endpoint and credential)
+e.g., backend connection string (endpoint and credential) vs. backbed plugin list
 e.g., db connection string (endpoint and credential)
 
 Method 1 :: .ini + oslo.config
