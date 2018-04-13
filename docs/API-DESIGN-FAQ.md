@@ -3,7 +3,14 @@
 Q: How do we organize the configuration file?
 
 ```
-?
+TBD
+
+e.g., log file level and log file location
+
+Method 1 :: .ini + oslo.config
+
+Method 2 :: .py + python import
+
 ```
 
 Q: How do we load the configuration file?
