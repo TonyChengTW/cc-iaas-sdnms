@@ -4,24 +4,23 @@ from falcon.media.validators.jsonschema import validate
 
 from sqlalchemy.exc import IntegrityError
 
-from cc_iaas_sdnms.db import models
-from cc_iaas_sdnms.resources import BaseResource
+from cc_iaas_sdnms.models import models
+from cc_iaas_sdnms.resources.base_resource import BaseResource
 from cc_iaas_sdnms.schemas import load_schema
 
 
 class ScoresResource(BaseResource):
+
+    scores = {}
+
     def on_get(self, req, resp):
         model_list = models.UserScores.get_list(self.db.session)
 
-        scores = [model.as_dict for model in model_list]
-
+        self.scores = [model.as_dict for model in model_list]
         resp.status = falcon.HTTP_200
-
-        self.set_result(falcon.HTTP_200, "", {
-            "scores": scores
-        })
-
-        resp.media = self.get_result()
+        # resp.append_header("CC_ERROR_MSG", "test")
+        resp.media = self.scores
+        
 
     @validate(load_schema('scores_creation'))
     def on_post(self, req, resp):

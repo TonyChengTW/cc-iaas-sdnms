@@ -5,7 +5,7 @@ import falcon
 from oslo_config import cfg
 from oslo_log import log
 
-from cc_iaas_sdnms.db.manager import DBManager
+from cc_iaas_sdnms.models.manager import DBManager
 from cc_iaas_sdnms.middleware.context import ContextMiddleware
 from cc_iaas_sdnms.util import simport
 from cc_iaas_sdnms.resources import scores
