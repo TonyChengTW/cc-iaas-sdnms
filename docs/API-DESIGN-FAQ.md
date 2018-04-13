@@ -51,5 +51,5 @@ mod app/server.py
 Q: How do we use the logging function?
 
 ```
-?
+oslo.log
 ```
