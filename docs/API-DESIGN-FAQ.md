@@ -13,6 +13,8 @@ Method 1 :: .ini + oslo.config
 
 Method 2 :: .py + python import
 
+Method 3 :: .yml
+
 ```
 
 Q: How do we load the configuration file?
