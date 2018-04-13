@@ -1,7 +1,25 @@
 ## Install packages
-sudo yum install epel-release
-sudo yum install httpd mod_wsgi
-sudo pip install python-pip virtualenv
+yum install -y epel-release
+yum install -y httpd mod_wsgi
+pip install -y python-pip virtualenv
+
+
+## Install MariaDB 10.2
+cat > /etc/yum.repos.d/MariaDB.repo << EOF
+[mariadb]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.2/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+EOF
+
+yum install -y MariaDB-server MariaDB-client
+systemctl start mariadb
+systemctl enable mariadb
+
+firewall-cmd -permanent -add-services=mysql
+firewall-cmd -permanent -add-port=3306/tcp
+firewall-cmd -reload
 
 
 ## Create project
@@ -11,16 +29,5 @@ cd cc-iaas-sdnms
 virtualenv python_env
 source python_env/bin/activate
 
-
-## Apache configuration file
-vi /etc/httpd/conf.d/sdnms.conf
-
-<Directory /opt/cc-iaas-sdnms/cc_iaas_sdnms/app>
-    <Files wsgi.py>
-        Require all granted
-    </Files>
-</Directory>
-
-WSGIDaemonProcess sdnms
-WSGIProcessGroup sdnms
-WSGIScriptAlias /sdnms /opt/cc-iaas-sdnms/cc_iaas_sdnms/app/wsgi.py
+pip install -r requirements.txt -c upper-constraints-pike.txt
+pip install -r requirements.txt
