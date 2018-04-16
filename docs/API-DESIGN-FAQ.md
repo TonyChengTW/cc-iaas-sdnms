@@ -43,6 +43,10 @@ There is are a main configuraiton file and many backend configuraiton files.
 The main configuration file specifies
 * db connection string
 * log file location
+* backend driver type
+  * fw
+  * waf
+  * switch
 
 These configuraiton files are .ini files.
 * etc/sdnms_api/sdnms_api.ini
