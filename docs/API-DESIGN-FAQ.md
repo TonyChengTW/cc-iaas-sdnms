@@ -71,7 +71,7 @@ e.g., my_resource, add resources/my_resource.py
 Q: How do we load the routing code?
 
 ```
-mod conf/dispatcher.py
+mod dispatcher.py
 mod app/server.py
 ```
 
@@ -103,4 +103,10 @@ Q: How do we use the logging function?
 
 ```
 We leverage oslo.log.
+```
+
+Q: How do we organize the falcon media code?
+
+```
+All falcon media code are put in the media/ folder.
 ```
