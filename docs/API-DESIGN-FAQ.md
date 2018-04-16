@@ -6,10 +6,16 @@ Q: Where is the entrypoint module which is loaded by mod_wsgi?
 app/wsgi.py
 ```
 
-Q: Where is the main module which loads configuration file, creates `application` object, and launches dev http server if needed?
+Q: Where is the main module which creates `application` object?
 
 ```
 app/server.py
+
+The main module does:
+* loads configuration file
+* registers RESTful API routes
+* registers WSGI middlewares
+* launches dev http server if needed
 ```
 
 Q: How do we organize the backend via some sort of plugin mechanism?
