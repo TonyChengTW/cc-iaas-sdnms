@@ -4,6 +4,8 @@ Q: Where is the entrypoint module which is loaded by mod_wsgi?
 
 ```
 app/wsgi.py
+
+The entrypoint module must return an application object.
 ```
 
 Q: Where is the main module which creates `application` object?
@@ -11,11 +13,11 @@ Q: Where is the main module which creates `application` object?
 ```
 app/server.py
 
-The main module does:
-* loads configuration file
-* registers RESTful API routes
-* registers WSGI middlewares
-* launches dev http server if needed
+The main module must
+* load configuration file
+* register RESTful API routes
+* register WSGI middlewares
+* launche dev http server if needed
 ```
 
 Q: How do we organize the backend via some sort of plugin mechanism?
@@ -27,7 +29,7 @@ Use driver pattern
 
 Each driver has its own configuration file in which specifies backend endpoint and access credential.
 
-There are 3 driver types:
+There are 3 driver types
 * FW
 * WAF
 * SWITCH
@@ -48,7 +50,7 @@ Q: How do we load the configuration file?
 ```
 oslo.config
 
-Alternative methods are :
+Alternative methods are
 * python import for .py file
 * ? for .yml file
 ```
