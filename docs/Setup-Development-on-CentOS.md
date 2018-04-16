@@ -2,7 +2,8 @@
 ```
 yum install -y epel-release
 yum install -y httpd mod_wsgi
-pip install -y python-pip virtualenv
+yum install python-pip
+pip install -y virtualenv
 ```
 
 ## Install MariaDB 10.2
