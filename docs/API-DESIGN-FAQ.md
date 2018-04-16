@@ -15,10 +15,10 @@ sdnms_api/app/server.py
 
 The main module must
 * load configuration file
-* parse command line arguments
+* load command line arguments
 * register RESTful API routes
 * register WSGI middlewares
-* launche dev http server if needed
+* launch dev http server if needed
 ```
 
 Q: How do we organize the backend via some sort of plugin mechanism?
