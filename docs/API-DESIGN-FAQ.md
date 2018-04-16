@@ -64,8 +64,8 @@ Q: How do we organize the routing code?
 ```
 All routing code are put in the resources/ folder.
 
-If you need create a new resource e.g., my_resource
-add resources/my_resource.py
+If you need create a new resource
+e.g., my_resource, add resources/my_resource.py
 ```
 
 Q: How do we load the routing code?
@@ -80,14 +80,23 @@ Q: How do we organize the middleware code?
 ```
 All middleware code are put in the middleware/ folder.
 
-If you need create a new middleware e.g., my_middleware
-add middleware/my_middleware.py
+If you need create a new middleware
+e.g., my_middleware, add middleware/my_middleware.py
 ```
 
 Q: How do we load the middleware code?
 
 ```
 mod app/server.py
+```
+
+Q: How do we organize the model code?
+
+```
+All model code are put in the models/ folder.
+
+If you need create a new model
+e.g., my_model, add models/my_model.py
 ```
 
 Q: How do we use the logging function?
