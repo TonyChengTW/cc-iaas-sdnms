@@ -42,7 +42,7 @@ There is are a main configuraiton file and many backend configuraiton files.
 
 The main configuration file specifies
 * db connection string
-* log file location.
+* log file location
 
 These configuraiton files are .ini files.
 ```
