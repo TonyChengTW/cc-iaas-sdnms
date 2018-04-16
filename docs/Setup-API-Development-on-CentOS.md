@@ -40,7 +40,7 @@ pip install -r requirements.txt -c upper-constraints-pike.txt
 pip install -r requirements.txt
 ```
 
-## Install backends
+## Install backend drivers
 ```
 HOW?
 ```
