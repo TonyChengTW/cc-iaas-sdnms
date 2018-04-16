@@ -35,6 +35,12 @@ There are 3 driver types
 * SWITCH
 ```
 
+Q: How do we load the backend plugin?
+
+```
+We leverage stevedore.
+```
+
 Q: How do we organize the configuration file?
 
 ```
