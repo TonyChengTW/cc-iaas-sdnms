@@ -3,7 +3,7 @@
 Q: Where is the entrypoint module which is loaded by mod_wsgi?
 
 ```
-app/wsgi.py
+sdnms_api/app/wsgi.py
 
 The entrypoint module must return an application object.
 ```
@@ -11,7 +11,7 @@ The entrypoint module must return an application object.
 Q: Where is the main module which creates `application` object?
 
 ```
-app/server.py
+sdnms_api/app/server.py
 
 The main module must
 * load configuration file
@@ -50,7 +50,7 @@ These configuraiton files are .ini files.
 Q: How do we load the configuration file?
 
 ```
-mod app/server.py
+mod sdnms_api/app/server.py
 
 We leverage oslo.config to load the configuration file.
 
@@ -62,51 +62,51 @@ Alternative methods are
 Q: How do we organize the routing code?
 
 ```
-All routing code are put in the resources/ folder.
+All routing code are put in the sdnms_api/resources/ folder.
 
 If you need create a new resource
-e.g., my_resource, add resources/my_resource.py
+e.g., my_resource, add sdnms_api/resources/my_resource.py
 ```
 
 Q: How do we load the routing code?
 
 ```
-mod dispatcher.py
-mod app/server.py
+mod sdnms_api/config.py
+mod sdnms_api/app/server.py
 ```
 
 Q: How do we organize the middleware code?
 
 ```
-All middleware code are put in the middlewares/ folder.
+All middleware code are put in the sdnms_api/middlewares/ folder.
 
 If you need create a new middleware
-e.g., my_middleware, add middlewares/my_middleware.py
+e.g., my_middleware, add sdnms_api/middlewares/my_middleware.py
 ```
 
 Q: How do we load the middleware code?
 
 ```
-mod app/server.py
+mod sdnms_api/app/server.py
 ```
 
 Q: How do we organize the model code?
 
 ```
-All model code are put in the models/ folder.
+All model code are put in the sdnms_api/models/ folder.
 
 If you need create a new model
-e.g., my_model, add models/my_model.py
+e.g., my_model, add sdnms_api/models/my_model.py
+```
+
+Q: How do we organize the falcon media code?
+
+```
+All falcon media code are put in the sdnms_api/medium/ folder.
 ```
 
 Q: How do we use the logging function?
 
 ```
 We leverage oslo.log.
-```
-
-Q: How do we organize the falcon media code?
-
-```
-All falcon media code are put in the medium/ folder.
 ```
