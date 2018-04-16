@@ -78,10 +78,10 @@ mod app/server.py
 Q: How do we organize the middleware code?
 
 ```
-All middleware code are put in the middleware/ folder.
+All middleware code are put in the middlewares/ folder.
 
 If you need create a new middleware
-e.g., my_middleware, add middleware/my_middleware.py
+e.g., my_middleware, add middlewares/my_middleware.py
 ```
 
 Q: How do we load the middleware code?
@@ -108,5 +108,5 @@ We leverage oslo.log.
 Q: How do we organize the falcon media code?
 
 ```
-All falcon media code are put in the media/ folder.
+All falcon media code are put in the medium/ folder.
 ```
