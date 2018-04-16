@@ -6,7 +6,7 @@ Q: Where is the entrypoint module which is loaded by mod_wsgi?
 app/wsgi.py
 ```
 
-Q: Where is the main module which loads configuration file, creates `application` object, and launchs dev http server if needed?
+Q: Where is the main module which loads configuration file, creates `application` object, and launches dev http server if needed?
 
 ```
 app/server.py
