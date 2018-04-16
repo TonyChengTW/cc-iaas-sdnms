@@ -45,6 +45,8 @@ The main configuration file specifies
 * log file location
 
 These configuraiton files are .ini files.
+* etc/?
+* etc/?
 ```
 
 Q: How do we load the configuration file?
