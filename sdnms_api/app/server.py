@@ -11,8 +11,12 @@ from sdnms_api import config
 LOG = log.getLogger(__name__)
 CONF = config.CONF
 
+
 def launch(config_file):
-    config.init()
+    #config_file = conf.get('config_file', "/etc/monasca/api-config.conf")
+    config.init(config_file=config_file)
+    log.set_defaults()
+    log.register_options(CONF)
 
     mgr = None
     #mgr = DBManager(CONF.database.url)
@@ -30,7 +34,7 @@ def get_wsgi_app(config_base_path=None, **kwargs):
 
     if config_base_path is None:
         config_base_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), '../../../etc/sdnms_api')
+            os.path.dirname(os.path.realpath(__file__)), '../../etc/sdnms_api')
 
     config_file = os.path.join(config_base_path, config_file)
     return launch(config_file)
