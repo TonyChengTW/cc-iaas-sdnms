@@ -11,8 +11,6 @@ from cc_iaas_sdnms.schemas import load_schema
 
 class ScoresResource(BaseResource):
 
-    scores = {}
-
     def on_get(self, req, resp):
         model_list = models.UserScores.get_list(self.db.session)
 
