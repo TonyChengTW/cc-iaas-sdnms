@@ -42,4 +42,6 @@ pip install -r requirements.txt
 ## Start dev http server
 ```
 HOW?
+
+python sdnms_api/app/server.py 
 ```
