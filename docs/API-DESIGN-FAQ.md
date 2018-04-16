@@ -63,10 +63,6 @@ Q: How do we load the configuration file?
 mod sdnms_api/app/server.py
 
 We leverage oslo.config to load the configuration file.
-
-Alternative methods are
-* python import for .py file
-* ? for .yml file
 ```
 
 Q: How do we organize the routing code?
