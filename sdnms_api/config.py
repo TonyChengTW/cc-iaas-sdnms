@@ -7,7 +7,7 @@ LOG = log.getLogger(__name__)
 
 dispatcher_opts = [
     cfg.StrOpt('health',
-               default='cc_iaas_sdnms.resources.health:HealthResource',
+               default='sdnms_api.resources.health:HealthResource',
                help='HealthResource controller'),
 ]
 
