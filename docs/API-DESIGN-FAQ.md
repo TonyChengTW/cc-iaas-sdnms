@@ -46,9 +46,11 @@ The main configuration file specifies
 
 These configuraiton files are .ini files.
 * etc/sdnms_api/main.ini
-* etc/sdnms_api/backends/fw_xxxx.ini
-* etc/sdnms_api/backends/waf_xxxx.ini
-* etc/sdnms_api/backends/switch_xxxx.ini
+* etc/sdnms_api/backends/fw_fortinet.ini
+* etc/sdnms_api/backends/fw_paloalto.ini
+* etc/sdnms_api/backends/waf_f5.ini
+* etc/sdnms_api/backends/switch_neo.ini
+* etc/sdnms_api/backends/switch_mellanox.ini
 ```
 
 Q: How do we load the configuration file?
