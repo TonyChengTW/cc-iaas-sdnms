@@ -38,3 +38,8 @@ source python_env/bin/activate
 pip install -r requirements.txt -c upper-constraints-pike.txt
 pip install -r requirements.txt
 ```
+
+## Start dev http server
+```
+HOW?
+```
