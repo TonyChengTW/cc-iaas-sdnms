@@ -25,23 +25,21 @@ Each driver has its own configuration file in which specifies backend endpoint a
 Q: How do we organize the configuration file?
 
 ```
-TBD
+There is are a main configuraiton file and many backend configuraiton files.
 
-e.g., log file level and log file location
-e.g., db connection string (endpoint and credential)
+The main configuration file specifies db connection string and log file location.
 
-Method 1 :: .ini + oslo.config
-
-Method 2 :: .py + python import
-
-Method 3 :: .yml
-
+These configuraiton files are .ini files.
 ```
 
 Q: How do we load the configuration file?
 
 ```
 oslo.config
+
+Alternative methods are :
+* python import for .py file
+* ? for .yml file
 ```
 
 Q: How do we organize the routing code?
