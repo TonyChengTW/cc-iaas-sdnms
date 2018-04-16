@@ -48,7 +48,9 @@ These configuraiton files are .ini files.
 Q: How do we load the configuration file?
 
 ```
-oslo.config
+mod app/server.py
+
+We leverage oslo.config to load the configuration file.
 
 Alternative methods are
 * python import for .py file
@@ -58,8 +60,9 @@ Alternative methods are
 Q: How do we organize the routing code?
 
 ```
-e.g.,
+All routing code are put in the resources/ folder.
 
+If you need create a new resource e.g., my_resource
 add resources/my_resource.py
 ```
 
@@ -73,8 +76,9 @@ mod app/server.py
 Q: How do we organize the middleware code?
 
 ```
-e.g.,
+All middleware code are put in the middleware/ folder.
 
+If you need create a new middleware e.g., my_middleware
 add middleware/my_middleware.py
 ```
 
@@ -87,5 +91,5 @@ mod app/server.py
 Q: How do we use the logging function?
 
 ```
-oslo.log
+We leverage oslo.log.
 ```
