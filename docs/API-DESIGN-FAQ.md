@@ -14,7 +14,7 @@ app/server.py
 
 Q: How do we organize the backend via some sort of plugin mechanism?
 
-About plugin invocation patterns see (this)[https://docs.openstack.org/stevedore/latest/user/essays/pycon2013.html]
+About plugin invocation patterns see [this](https://docs.openstack.org/stevedore/latest/user/essays/pycon2013.html)
 
 ```
 Use driver pattern
