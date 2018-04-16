@@ -1,3 +1,3 @@
-from cc_iaas_sdnms.app import server
+from sdnms_api.app import server
 
 application = server.get_wsgi_app()

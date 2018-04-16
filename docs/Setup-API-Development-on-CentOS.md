@@ -47,7 +47,7 @@ HOW?
 
 ## Start dev http server
 ```
-python sdnms_api/app/server.py --config=etc/sdnms_api/sdnms_api_dev.ini
+python sdnms_api/app/server.py --config-file=etc/sdnms_api/sdnms_api_dev.ini
 ```
 
 ## Test dev http server
