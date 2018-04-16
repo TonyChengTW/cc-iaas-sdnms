@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 SAModel = declarative_base()
 
 
-class FirewallServiceScores(SAModel):
+class FirewallServiceModel(SAModel):
     __tablename__ = 'firewall_service'
 
     id = sa.Column(sa.Integer, primary_key=True)
