@@ -12,12 +12,14 @@ Q: Where is the main module which loads configuration file, creates `application
 app/server.py
 ```
 
-Q: How do we organize the backend?
+Q: How do we organize the backend via some sort of plugin mechanism?
+
+About plugin invocation patterns see (this)[https://docs.openstack.org/stevedore/latest/user/essays/pycon2013.html]
 
 ```
-TBD
+Use driver pattern
 
-e.g., backend connection string (endpoint and credential) vs. backbend plugin list
+Each driver has its own configuration file in which specifies backend endpoint and access credential.
 ```
 
 Q: How do we organize the configuration file?
