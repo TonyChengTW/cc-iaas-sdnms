@@ -2,7 +2,6 @@
 import os
 import falcon
 
-from oslo_config import cfg
 from oslo_log import log
 
 from cc_iaas_sdnms.models.manager import DBManager
@@ -15,13 +14,13 @@ LOG = log.getLogger(__name__)
 CONF = config.CONF
 
 def launch():
-    config.parse_args()
+    #config.parse_args()
 
-    mgr = DBManager(cfg.CONF.database.url)
+    mgr = DBManager(CONF.database.url)
     mgr.setup()
 
     app = falcon.API()
-    scores = simport.load(cfg.CONF.dispatcher.scores)(mgr)
+    scores = simport.load(CONF.dispatcher.scores)(mgr)
     app.add_route("/scores", scores)
 
     LOG.debug('Dispatcher drivers have been added to the routes!')
