@@ -1,5 +1,17 @@
 # Project structure
 
+Q: Where is the entrypoint module which is loaded by mod_wsgi?
+
+```
+app/wsgi.py
+```
+
+Q: Where is the main module which creates `application` object?
+
+```
+app/server.py
+```
+
 Q: How do we organize the backend?
 
 ```
@@ -27,7 +39,7 @@ Method 3 :: .yml
 Q: How do we load the configuration file?
 
 ```
-?
+oslo.config
 ```
 
 Q: How do we organize the routing code?
