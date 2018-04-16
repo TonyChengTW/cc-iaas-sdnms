@@ -40,7 +40,9 @@ Q: How do we organize the configuration file?
 ```
 There is are a main configuraiton file and many backend configuraiton files.
 
-The main configuration file specifies db connection string and log file location.
+The main configuration file specifies
+* db connection string
+* log file location.
 
 These configuraiton files are .ini files.
 ```
