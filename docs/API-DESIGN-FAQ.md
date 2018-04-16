@@ -45,8 +45,10 @@ The main configuration file specifies
 * log file location
 
 These configuraiton files are .ini files.
-* etc/?
-* etc/?
+* etc/sdnms_api/main.ini
+* etc/sdnms_api/backends/fw_xxxx.ini
+* etc/sdnms_api/backends/waf_xxxx.ini
+* etc/sdnms_api/backends/switch_xxxx.ini
 ```
 
 Q: How do we load the configuration file?
