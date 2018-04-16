@@ -1,2 +1,6 @@
+.python-version
+.vscode
+.idea
+*.iml
 *.swap
 *.pyc
