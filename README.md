@@ -90,6 +90,7 @@ References
   * https://github.com/openstack/monasca-events-api
   * https://github.com/openstack/monasca-log-api
 * [Example of one project with two top python packages](https://github.com/openstack/monasca-agent)
+* [How to select specific the cipher while sending request via python request module](https://stackoverflow.com/questions/40373115/how-to-select-specific-the-cipher-while-sending-request-via-python-request-modul)
 
 # Milestone 2 :: Implementation of backends client librabry
 
