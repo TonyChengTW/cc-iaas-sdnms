@@ -92,6 +92,7 @@ References
 * [Example of one project with two top python packages](https://github.com/openstack/monasca-agent)
 * [How to select specific the cipher while sending request via python request module](https://stackoverflow.com/questions/40373115/how-to-select-specific-the-cipher-while-sending-request-via-python-request-modul)
 * [How to select specific the ssl/tls protocol while sending request via python request module](https://www.pydoc.io/pypi/requests-2.11.1/autoapi/ssl_/index.html)
+* [How to send https request via urllib2+httplib](https://blog.csdn.net/ns2250225/article/details/79528827)
 
 # Milestone 2 :: Implementation of backends client librabry
 
