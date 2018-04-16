@@ -4,9 +4,9 @@ from falcon.media.validators.jsonschema import validate
 
 from sqlalchemy.exc import IntegrityError
 
-from cc_iaas_sdnms.models import models
-from cc_iaas_sdnms.resources.base_resource import BaseResource
-from cc_iaas_sdnms.schemas import load_schema
+from sdnms_api.models import models
+from sdnms_api.resources.base_resource import BaseResource
+from sdnms_api.medium import load_schema
 
 
 class ScoresResource(BaseResource):
