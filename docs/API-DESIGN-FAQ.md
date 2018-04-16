@@ -57,6 +57,7 @@ The main configuration file specifies
 
 These configuraiton files are .ini files.
 * etc/sdnms_api/sdnms_api.ini
+* etc/sdnms_api/sdnms_api_dev.ini
 * etc/sdnms_api/backends/fw_fortinet_v5.6.3.ini
 * etc/sdnms_api/backends/fw_paloalto_v?.ini
 * etc/sdnms_api/backends/waf_f5_v13.1.ini
