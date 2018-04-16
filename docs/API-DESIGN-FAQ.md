@@ -124,3 +124,9 @@ Q: How do we use the logging function?
 ```
 We leverage oslo.log.
 ```
+
+Q: How do we map the RESTful API to the backend driver?
+
+```
+TBD
+```
