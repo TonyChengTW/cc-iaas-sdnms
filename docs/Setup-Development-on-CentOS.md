@@ -2,7 +2,7 @@
 ```
 yum install -y epel-release
 yum install -y httpd mod_wsgi
-yum install -y python-pip
+yum install -y python-pip gcc python-devel
 pip install virtualenv
 ```
 
