@@ -2,8 +2,8 @@
 ```
 yum install -y epel-release
 yum install -y httpd mod_wsgi
-yum install python-pip
-pip install -y virtualenv
+yum install -y python-pip
+pip install virtualenv
 ```
 
 ## Install MariaDB 10.2
@@ -23,9 +23,9 @@ systemctl enable mariadb
 
 Firewall Setting
 ```
-firewall-cmd -permanent -add-services=mysql
-firewall-cmd -permanent -add-port=3306/tcp
-firewall-cmd -reload
+firewall-cmd --permanent --add-service=mysql
+firewall-cmd --permanent --add-port=3306/tcp
+firewall-cmd --reload
 ```
 
 ## Create project
