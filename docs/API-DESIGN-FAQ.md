@@ -45,7 +45,7 @@ The main configuration file specifies
 * log file location
 
 These configuraiton files are .ini files.
-* etc/sdnms_api/main.ini
+* etc/sdnms_api/sdnms_api.ini
 * etc/sdnms_api/backends/fw_fortinet_?.ini
 * etc/sdnms_api/backends/fw_paloalto_?.ini
 * etc/sdnms_api/backends/waf_f5_?.ini
