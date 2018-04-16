@@ -29,7 +29,7 @@ dispatcher_opts = [
 dispatcher_group = cfg.OptGroup(name='dispatcher', title='dispatcher')
 
 
-def init(args=[], config_file=None):
+def init(args=None, config_file=None):
     cfg.CONF(args=args,
          project='SDNMS',
          version="1.0",

@@ -11,11 +11,15 @@ from sdnms_api import config
 LOG = log.getLogger(__name__)
 CONF = config.CONF
 
+
 def launch(config_file=None):
+    if config_file is None:
+        config_file = '/etc/sdnms_api/sdnms_api.ini'
+
     log.set_defaults()
     log.register_options(CONF)
 
-    config.init(args=sys.argv[1:])
+    config.init(config_file=config_file)
 
     mgr = None
     #mgr = DBManager(CONF.database.url)
