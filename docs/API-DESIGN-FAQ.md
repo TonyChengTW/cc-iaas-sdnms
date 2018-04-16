@@ -26,6 +26,11 @@ About plugin invocation patterns see [this](https://docs.openstack.org/stevedore
 Use driver pattern
 
 Each driver has its own configuration file in which specifies backend endpoint and access credential.
+
+There are 3 driver types:
+* FW
+* WAF
+* SWITCH
 ```
 
 Q: How do we organize the configuration file?
