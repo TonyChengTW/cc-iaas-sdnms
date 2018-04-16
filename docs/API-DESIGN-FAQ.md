@@ -56,11 +56,11 @@ The main configuration file specifies
 
 These configuraiton files are .ini files.
 * etc/sdnms_api/sdnms_api.ini
-* etc/sdnms_api/backends/fw_fortinet_?.ini
-* etc/sdnms_api/backends/fw_paloalto_?.ini
-* etc/sdnms_api/backends/waf_f5_?.ini
-* etc/sdnms_api/backends/switch_mellanox_neo.ini
-* etc/sdnms_api/backends/switch_mellanox_?.ini
+* etc/sdnms_api/backends/fw_fortinet_v5.6.3.ini
+* etc/sdnms_api/backends/fw_paloalto_v?.ini
+* etc/sdnms_api/backends/waf_f5_v13.1.ini
+* etc/sdnms_api/backends/switch_mellanox_neo_v?.ini
+* etc/sdnms_api/backends/switch_mellanox_v?.ini
 ```
 
 Q: How do we load the configuration file?
