@@ -46,5 +46,5 @@ python sdnms_api/app/server.py --config=etc/sdnms_api/sdnms_api_dev.ini
 
 ## Test dev http server
 ```
-curl http://localhost:8000/
+curl http://localhost:8000/health
 ```
