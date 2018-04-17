@@ -6,6 +6,7 @@ from oslo_log import log
 from sdnms_api.models.manager import DBManager
 from sdnms_api.utils import simport
 from sdnms_api.resources import health
+from sdnms_api.resources import firewall
 from sdnms_api import config
 
 LOG = log.getLogger(__name__)
@@ -30,6 +31,8 @@ def launch(config_file=None):
     app = falcon.API()
     health = simport.load(CONF.dispatcher.health)(mgr)
     app.add_route("/health", health)
+    firewall_address = simport.load(CONF.dispatcher.firewall_address)(mgr)
+    app.add_route("/firewall/address", firewall_address)
 
     LOG.debug('Dispatcher drivers have been added to the routes!')
     return app

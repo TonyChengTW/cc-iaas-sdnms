@@ -8,7 +8,7 @@ class FirewallAddressModel(SAModel):
     __tablename__ = 'firewall_address'
 
     id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(255), nullable=False)
+    name = sa.Column(sa.String(255), nullable=False, unique=True)
     type = sa.Column(sa.String(128), nullable=False)
     content = sa.Column(sa.String(255), nullable=False)
     interface = sa.Column(sa.String(15), nullable=False)
@@ -31,10 +31,6 @@ class FirewallAddressModel(SAModel):
             'comment': self.comment
         }
 
-    def save(self, session):
-        with session.begin():
-            session.add(self)
-
     @classmethod
     def get_list(cls, session):
         models = []
@@ -44,6 +40,24 @@ class FirewallAddressModel(SAModel):
             models = query.all()
 
         return models
+
+    @classmethod
+    def get(cls, session, id):
+        model = {}
+
+        with session.begin():
+            query = session.query(cls)
+            model = query.filter(cls.id == id).one()
+
+        return model
+
+    def save(self, session):
+        with session.begin():
+            session.add(self)
+
+    def delete(self, session):
+        with session.begin():
+            session.delete(self)
 
 
 class FirewallServiceModel(SAModel):

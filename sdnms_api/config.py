@@ -27,6 +27,9 @@ dispatcher_opts = [
     cfg.StrOpt('health',
                default='sdnms_api.resources.health:HealthResource',
                help='HealthResource controller'),
+    cfg.StrOpt('firewall_address',
+               default='sdnms_api.resources.firewall:FirewallAddressResource',
+               help='FirewallAddressResource controller'),
 ]
 dispatcher_group = cfg.OptGroup(name='dispatcher', title='dispatcher')
 
