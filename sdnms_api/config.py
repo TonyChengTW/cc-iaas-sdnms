@@ -18,7 +18,9 @@ database_opts = [
                help='The database user of login'),
     cfg.StrOpt('password', default='root',
                help='The database password of login'),
-]
+    cfg.StrOpt('database_name', default='sdnms_api',
+               help='Used database name'),
+    ]
 database_group = cfg.OptGroup(name='database', title='database')
 
 dispatcher_opts = [

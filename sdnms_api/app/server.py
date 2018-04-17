@@ -21,9 +21,11 @@ def launch(config_file=None):
 
     config.init(config_file=config_file)
 
-    mgr = None
-    #mgr = DBManager(CONF.database.url)
-    #mgr.setup()
+    db = "mysql+mysqlconnector://{0}:{1}@{2}:{3}/{4}".format(
+            CONF.database.username, CONF.database.password,
+            CONF.database.address, CONF.database.port, CONF.database.database_name)
+    mgr = DBManager(db)
+    mgr.setup()
 
     app = falcon.API()
     health = simport.load(CONF.dispatcher.health)(mgr)

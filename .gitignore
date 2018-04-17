@@ -4,3 +4,4 @@
 *.iml
 *.swap
 *.pyc
+*.egg-info
