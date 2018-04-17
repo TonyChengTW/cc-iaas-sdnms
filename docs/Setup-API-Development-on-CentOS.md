@@ -39,6 +39,10 @@ source python_env/bin/activate
 pip install -r requirements.txt -c upper-constraints-pike.txt
 pip install -r requirements.txt
 ```
+## Soft Link the sdnms_api package to python library
+```
+ln -s /opt/cc-iaas-sdnms/sdnms_api/ /opt/cc-iaas-sdnms/python_env/lib/python2.7/site-packages/sdnms_api
+```
 
 ## Install backend drivers
 ```
