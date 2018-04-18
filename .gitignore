@@ -5,3 +5,4 @@
 *.swap
 *.pyc
 python_env/*
+*.egg-info
