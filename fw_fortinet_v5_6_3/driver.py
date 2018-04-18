@@ -44,8 +44,10 @@ class Driver(object):
         for group_name in self.fw_identities:
             conf.register_opts(ftg_opts, group=group_name)
 
-    def use(self, index=0):
+    def use(self, index=0, identity=None):
         self._index = index
+        self._identity = identity
 
     def info(self):
-        print self._index
+        print "%s %s" % (self._index,self._identity)
+        return "%s %s" % (self._index,self._identity)
