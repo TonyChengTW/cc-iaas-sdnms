@@ -1,3 +1,5 @@
+from sdnms_api.driver import loader
+
 class SampleFirewall(object):
     def use(self, index, identity):
         self._index = index
@@ -41,7 +43,7 @@ class BackendManager(object):
     m.call_firewall(method='info')
     """
     def __init__(self):
-        self._firewall = SampleFirewall()
+        self._firewall = loader.firewall_driver()
         self._waf = SampleWaf()
         self._switch = SampleSwitch()
 
