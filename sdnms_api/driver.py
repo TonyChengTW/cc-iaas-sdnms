@@ -30,7 +30,8 @@ class DriverLoader(object):
             driver = self._load_driver(self.NAMESPACE_SWITCH, driver_name)
             self._drivers['switch'] = driver
 
-    def _load_driver(self, namespace, name, invoke_load=True):
+    def _load_driver(self, namespace, name, invoke_load=False):
+        print namespace, name
         try:
             LOG.debug("Attempting to import driver %s", name)
             mgr = driver.DriverManager(namespace,

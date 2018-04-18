@@ -1,39 +1,21 @@
 from oslo_config import cfg
-import pdb
 
 class Driver(object):
 
-    def __init__(self, config_file=None):
+    def __init__(self, conf):
+        print 'Driver.__init__'
 
-        if config_file is None:
-            config_file = '/etc/sdnms_api/backends/fw_fortinet_v5.6.3.ini'
-
-        cfg.CONF(args=[],
-                project='FortiOS',
-                version="5.6.3",
-                default_config_files=[config_file],
-                description='FortiOS RESTful API')
-
+    def a__init__(self, conf):
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
             ]
 
-        fwid_group = cfg.OptGroup(name='identities', title='ftg')
-        cfg.CONF.register_group(fwid_group)
-        cfg.CONF.register_opts(fwid_opts, fwid_group)
-        fw_identities_str = cfg.CONF.identities.fw
+        conf.register_opts(fwid_opts, group='identities')
+        fw_identities_str = conf.identities.fw
         fw_identities = [x for x in fw_identities_str.split(',')]
         self.fw_identities = fw_identities
         #self.use(1)
-
-
-    def use(self, index):
-        self._index = index
-
-
-        print('I am using index:{0} , id:{1}'.format(
-            index, self.fw_identities[index]))
 
         ftg_opts = [
             cfg.StrOpt('http_scheme',
@@ -58,11 +40,12 @@ class Driver(object):
             cfg.StrOpt('ssh_password',
                        help='The backend password for ssh login'),
         ]
-        ftg_group = cfg.OptGroup(name=self.fw_identities[index], title='ftg')
 
-        cfg.CONF.register_group(ftg_group)
-        cfg.CONF.register_opts(ftg_opts, ftg_group)
+        for group_name in self.fw_identities:
+            conf.register_opts(ftg_opts, group=group_name)
 
-        print('%s' % (cfg.CONF.get(self.fw_identities[index]).http_scheme))
-        print('%s' % (cfg.CONF.get(self.fw_identities[index]).http_host))
-        print('%s' % (cfg.CONF.get(self.fw_identities[index]).http_port))
+    def use(self, index=0):
+        self._index = index
+
+    def info(self):
+        print self._index

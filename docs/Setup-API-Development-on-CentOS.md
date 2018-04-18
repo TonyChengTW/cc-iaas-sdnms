@@ -51,7 +51,7 @@ HOW?
 
 ## Start dev http server
 ```
-python sdnms_api/app/server.py --config-file=etc/sdnms_api/sdnms_api_dev.ini
+python sdnms_api/app/server.py --config-file etc/sdnms_api/sdnms_api_dev.ini --config-file etc/sdnms_api/backends/fw_fortinet_v5.6.3.ini
 ```
 
 ## Test dev http server

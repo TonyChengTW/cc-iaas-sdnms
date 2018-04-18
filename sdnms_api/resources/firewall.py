@@ -121,10 +121,7 @@ class FirewallServiceResource(BaseResource):
         }
 
 
-class FirewallDeviceResource:
-
-    def __init__(self):
-        pass
+class FirewallDeviceResource(BaseResource):
 
     def on_get(self, req, resp):
         from sdnms_api.backends.manager import BackendManager
