@@ -33,6 +33,8 @@ def launch(config_file=None):
     app.add_route("/health", health)
     firewall_address = simport.load(CONF.dispatcher.firewall_address)(mgr)
     app.add_route("/firewall/address", firewall_address)
+    firewall_device = simport.load(CONF.dispatcher.firewall_device)(mgr)
+    app.add_route("/firewall/device", firewall_device)
 
     LOG.debug('Dispatcher drivers have been added to the routes!')
     return app

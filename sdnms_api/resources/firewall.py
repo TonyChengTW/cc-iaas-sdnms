@@ -119,3 +119,16 @@ class FirewallServiceResource(BaseResource):
         resp.media = {
             'id': model.id
         }
+
+
+class FirewallDeviceResource:
+
+    def __init__(self):
+        pass
+
+    def on_get(self, req, resp):
+        from sdnms_api.backends.manager import BackendManager
+        m = BackendManager()
+        m.use_firewall()
+        res = m.call_firewall(method='info')
+        resp.media = res
