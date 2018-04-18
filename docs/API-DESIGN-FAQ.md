@@ -128,5 +128,5 @@ We leverage oslo.log.
 Q: How do we map the RESTful API to the backend driver?
 
 ```
-Maybe like DB Connection fountional. (Alan)
+Maybe like DB Connection founctional. (Alan)
 ```
