@@ -21,7 +21,6 @@ database_opts = [
     cfg.StrOpt('database_name', default='sdnms_api',
                help='Used database name'),
     ]
-database_group = cfg.OptGroup(name='database', title='database')
 
 dispatcher_opts = [
     cfg.StrOpt('health',
@@ -31,8 +30,12 @@ dispatcher_opts = [
                default='sdnms_api.resources.firewall:FirewallAddressResource',
                help='FirewallAddressResource controller'),
 ]
-dispatcher_group = cfg.OptGroup(name='dispatcher', title='dispatcher')
 
+backends_opts = [
+    cfg.StrOpt('fw_driver', default='', help='The firewall plugin will use'),
+    cfg.StrOpt('waf_driver', default='', help='The WAF plugin will use'),
+    cfg.StrOpt('switch_driver', default='', help='The switch plugin will use'),
+]
 
 def init(args=None, config_file=None):
     cfg.CONF(args=args,
@@ -42,7 +45,6 @@ def init(args=None, config_file=None):
          description='SDNMS RESTful API')
 
     cfg.CONF.register_opts(default_opts)
-    cfg.CONF.register_group(database_group)
-    cfg.CONF.register_opts(database_opts, database_group)
-    cfg.CONF.register_group(dispatcher_group)
-    cfg.CONF.register_opts(dispatcher_opts, dispatcher_group)
+    cfg.CONF.register_opts(database_opts, group='database')
+    cfg.CONF.register_opts(dispatcher_opts, group='dispatcher')
+    cfg.CONF.register_opts(backends_opts, group='backends')
