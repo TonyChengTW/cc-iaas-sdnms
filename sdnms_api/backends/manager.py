@@ -1,41 +1,60 @@
+class SampleFirewall(object):
+    def use(self, index, identity):
+        self._index = index
+        self._identity = identity
+    def info(self):
+        print(self._index)
+        print(self._identity)
+
+class SampleWaf(object):
+    def use(self, index, identity):
+        self._index = index
+        self._identity = identity
+    def info(self):
+        print(self._index)
+        print(self._identity)
+
+class SampleSwitch(object):
+    def use(self, index, identity):
+        self._index = index
+        self._identity = identity
+    def info(self):
+        print(self._index)
+        print(self._identity)
+
 class BackendManager(object):
-    def __init__():
-        self.firewall = Firewall()
-        self.waf = Waf()
-        self.switch = Switch()
+    def __init__(self):
+        self._firewall = SampleFirewall()
+        self._waf = SampleWaf()
+        self._switch = SampleSwitch()
 
     def use_firewall(self, index=0, identity=None, selector=None):
         if selector is None:
-            self.firewall.index = index
-            self.firewall.identity = identity
+            self._firewall.use(index=index, identity=identity)
         else:
-            self.firewall.index = selector.get_index()
-            self.firewall.identity = selector.get_identity()
+            self._firewall.use(**selector.select())
 
     def use_waf(self, index=0, identity=None, selector=None):
         if selector is None:
-            self.waf.index = index
-            self.waf.identity = identity
+            self._waf.use(index=index, identity=identity)
         else:
-            self.waf.index = selector.get_index()
-            self.waf.identity = selector.get_identity()
+            self._waf.use(**selector.select())
 
     def use_switch(self, index=0, identity=None, selector=None):
         if selector is None:
-            self.switch.index = index
-            self.switch.identity = identity
+            self._switch.use(index=index, identity=identity)
         else:
-            self.switch.index = selector.get_index()
-            self.switch.identity = selector.get_identity()
+            self._switch.index = selector.get_index()
+            self._switch.use(**selector.select())
 
-    def call_firewall(self, method=None, *args=None, **kwargs=None)
-        fn = getattr(self.firewall, method)
+    def call_firewall(self, method=None, *args, **kwargs):
+        fn = getattr(self._firewall, method)
         return fn(*args, **kwargs)
 
-    def call_waf(self, method=None, *args=None, **kwargs=None)
-        fn = getattr(self.waf, method)
+    def call_waf(self, method=None, *args, **kwargs):
+        fn = getattr(self._waf, method)
         return fn(*args, **kwargs)
 
-    def call_switch(self, method=None, *args=None, **kwargs=None)
-        fn = getattr(self.switch, method)
+    def call_switch(self, method=None, *args, **kwargs):
+        fn = getattr(self._switch, method)
         return fn(*args, **kwargs)
