@@ -30,6 +30,9 @@ dispatcher_opts = [
     cfg.StrOpt('firewall_address',
                default='sdnms_api.resources.firewall:FirewallAddressResource',
                help='FirewallAddressResource controller'),
+    cfg.StrOpt('firewall_device',
+               default='sdnms_api.resources.firewall:FirewallDeviceResource',
+               help='FirewallDeviceResource controller'),
 ]
 dispatcher_group = cfg.OptGroup(name='dispatcher', title='dispatcher')
 
