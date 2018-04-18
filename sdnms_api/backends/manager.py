@@ -34,6 +34,9 @@ class BackendManager(object):
     m.use_firewall(index=1)
     m.call_firewall(method='info')
 
+    m.use_firewall(identity='cisco')
+    m.call_firewall(method='info')
+
     m.use_firewall(selector=SampleSelector())
     m.call_firewall(method='info')
     """
