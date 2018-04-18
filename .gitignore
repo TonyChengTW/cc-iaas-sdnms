@@ -1,2 +1,8 @@
+.python-version
+.vscode
+.idea
+*.iml
 *.swap
 *.pyc
+python_env/*
+*.egg-info
