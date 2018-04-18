@@ -1,3 +1,7 @@
+class SampleSelector(object):
+    def select(self):
+        return {'index': 2, 'identity': None}
+
 class SampleFirewall(object):
     def use(self, index, identity):
         self._index = index
@@ -23,6 +27,19 @@ class SampleSwitch(object):
         print(self._identity)
 
 class BackendManager(object):
+    """Sample usage
+
+    from sdnms_api.backends.manager import BackendManager, SampleSelector
+    m = BackendManager()
+    m.use_firewall()
+    m.call_firewall(method='info')
+
+    m.use_firewall(index=1)
+    m.call_firewall(method='info')
+
+    m.use_firewall(selector=SampleSelector())
+    m.call_firewall(method='info')
+    """
     def __init__(self):
         self._firewall = SampleFirewall()
         self._waf = SampleWaf()
