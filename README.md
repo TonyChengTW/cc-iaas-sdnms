@@ -3,6 +3,11 @@
 * relay API call from CMP to backends (one to one. **DO NOT issue additional subsequent API call i.e. NO workflow control !!! NO operation rollback !!!**)
 * record the relationship between CMP object and backend object
 
+# Future Scope
+
+* SFC
+* 1 site -> 2 sites -> 3 sites (i.e. sdnms cluster)
+
 # Arch.
 
 ```
