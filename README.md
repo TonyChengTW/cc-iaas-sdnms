@@ -90,7 +90,7 @@ Notice
 
 1. Prototype of AP mode stateful RESTful API server (1 ~ 2 weeks)
 2. Implementation of backends client librabry (1 ~ 2 weeks)
-3. Definition of CMP use cases, RESTful API spec, DB schema, backend API (4 ~ 8 weeks)
+3. Clarification of CMP use cases, RESTful API spec, DB schema, backend API (4 ~ 8 weeks)
 4. Implementation of RESTful API (2 ~ 4 weeks)
 
 # Milestone 1 :: Prototype of AP mode stateful RESTful API server
