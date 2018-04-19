@@ -1,6 +1,6 @@
 # Scope
 
-* relay API call from CMP to backends (one to one. **DO NOT issue additional subsequent API call i.e. DO NOT control workflow !!! NO rollback !!!**)
+* relay API call from CMP to backends (one to one. **DO NOT issue additional subsequent API call i.e. NO workflow control !!! NO operation rollback !!!**)
 * record the relationship between CMP object and backend object
 
 # Arch.
