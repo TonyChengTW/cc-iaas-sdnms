@@ -4,5 +4,5 @@
 *.iml
 *.swap
 *.pyc
-python_env/*
 *.egg-info
+v_env/*
