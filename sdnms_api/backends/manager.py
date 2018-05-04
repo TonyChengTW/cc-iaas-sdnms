@@ -43,7 +43,7 @@ class BackendManager(object):
     m.call_firewall(method='info')
     """
     def __init__(self):
-        self._firewall = loader.firewall_driver()('hello')
+        self._firewall = loader.firewall_driver()
         self._waf = SampleWaf()
         self._switch = SampleSwitch()
 

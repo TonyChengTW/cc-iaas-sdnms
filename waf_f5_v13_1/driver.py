@@ -1,2 +1,4 @@
+
 class Driver(object):
-    pass
+    def __init__(self, conf):
+        pass

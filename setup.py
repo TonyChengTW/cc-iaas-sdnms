@@ -23,7 +23,7 @@ setup(
             'waf_f5_v13_1 = waf_f5_v13_1.driver:Driver'
         ],
         'backend.switch.drivers': [
-            'sw_mellanox_sn2410 = mellanox_sn2410.driver:Driver'
+            'sw_mellanox_sn2410 = sw_mellanox_sn2410.driver:Driver'
         ]
     },
 )

@@ -14,6 +14,7 @@ class DriverLoader(object):
         self._conf = None
 
     def setup(self, conf):
+        LOG.info("setup conf: %s", conf.backends.items())
         self._conf = conf
         if conf.backends.fw_driver:
             driver_name = conf.backends.fw_driver
@@ -30,19 +31,20 @@ class DriverLoader(object):
             driver = self._load_driver(self.NAMESPACE_SWITCH, driver_name)
             self._drivers['switch'] = driver
 
-    def _load_driver(self, namespace, name, invoke_load=False):
-        print namespace, name
+    def _load_driver(self, namespace, name, invoke_load=True):
         try:
-            LOG.debug("Attempting to import driver %s", name)
+            LOG.info("Attempting to import driver %s:%s", namespace, name)
             mgr = driver.DriverManager(namespace,
                                        name,
                                        invoke_args=[self._conf],
                                        invoke_on_load=invoke_load)
             return mgr.driver
         except RuntimeError as e:
-            LOG.warning("Failed to load driver %(driver)s." % dict(driver=str([driver, e])))
-        except:
-            LOG.warning("Failed to load driver %s:%s" % (namespace, name))
+            LOG.warning("Failed to load driver from %s, %s" % (__file__, e))
+#        except TypeError as e:
+#            LOG.warning("Failed to load driver from %s, %s" % (__file__, e))
+#        except:
+#            LOG.warning("Failed to load driver %s:%s" % (namespace, name))
 
     def get_driver(self, driver_name):
         try:

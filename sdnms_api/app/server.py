@@ -18,11 +18,14 @@ def launch(config_file=None):
     if config_file is None:
         config_file = '/etc/sdnms_api/sdnms_api.ini'
 
-    log.set_defaults()
     log.register_options(CONF)
+    log.setup(CONF, "sdnms_api")
 
     config.init(config_file=config_file)
     loader.setup(CONF)
+
+    LOG.info('Creating falcon API ...')
+    app = falcon.API()
 
     db = "mysql+pymysql://{0}:{1}@{2}:{3}/{4}".format(
             CONF.database.username, CONF.database.password,
@@ -30,7 +33,6 @@ def launch(config_file=None):
     mgr = DBManager(db)
     mgr.setup()
 
-    app = falcon.API()
     health = simport.load(CONF.dispatcher.health)(mgr)
     app.add_route("/health", health)
     firewall_address = simport.load(CONF.dispatcher.firewall_address)(mgr)
@@ -38,7 +40,7 @@ def launch(config_file=None):
     firewall_device = simport.load(CONF.dispatcher.firewall_device)(mgr)
     app.add_route("/firewall/device", firewall_device)
 
-    LOG.debug('Dispatcher drivers have been added to the routes!')
+    LOG.info('Dispatcher drivers have been added to the routes!')
     return app
 
 def get_wsgi_app(config_base_path=None, **kwargs):
@@ -47,4 +49,5 @@ def get_wsgi_app(config_base_path=None, **kwargs):
 if __name__ == '__main__':
     from wsgiref import simple_server
     httpd = simple_server.make_server('127.0.0.1', 8000, get_wsgi_app())
+    LOG.info('Starting server %s at %s:%s',httpd,'127.0.0.1',8000)
     httpd.serve_forever()

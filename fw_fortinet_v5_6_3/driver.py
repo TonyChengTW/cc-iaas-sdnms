@@ -3,9 +3,6 @@ from oslo_config import cfg
 class Driver(object):
 
     def __init__(self, conf):
-        print 'Driver.__init__'
-
-    def a__init__(self, conf):
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
