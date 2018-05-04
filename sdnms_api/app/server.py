@@ -24,7 +24,7 @@ def launch(config_file=None):
     config.init(config_file=config_file)
     loader.setup(CONF)
 
-    db = "mysql+mysqlconnector://{0}:{1}@{2}:{3}/{4}".format(
+    db = "mysql+pymysql://{0}:{1}@{2}:{3}/{4}".format(
             CONF.database.username, CONF.database.password,
             CONF.database.address, CONF.database.port, CONF.database.database_name)
     mgr = DBManager(db)
