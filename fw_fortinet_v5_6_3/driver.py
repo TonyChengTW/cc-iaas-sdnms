@@ -1,86 +1,19 @@
 from oslo_config import cfg
 
+import pdb
 import requests
 import json
 
-
-class FirewallAuthorization:
-
-    cookies = {}
-    content = {}
-
-    def __init__(self):
-        pass
-
-    def login(self):
-        payload = {
-            "username": "admin",
-            "secretkey": "Abc12345",
-            "ajax": 1
-        }
-        r = requests.post("http://192.168.120.200/logincheck",
-                          data=payload)
-
-        if str(r.text[0]) == "1":
-            self.cookies = r.cookies
-
-    def generate_api_key(self):
-
-        if self.cookies == {}:
-            return False
-
-        headers = {
-            "Content-Type": "application/json",
-            "X-CSRFTOKEN": self.cookies['ccsrftoken'].replace("\"", "")
-        }
-        payload = {
-            "api-user": "api-admin"
-        }
-        r = requests.post("http://192.168.120.200/api/v2/monitor/system/api-user/generate-key",
-                   params={"vdom": "root"},
-                   cookies=self.cookies,
-                   headers=headers,
-                   json=payload)
-
-        self.content = json.loads(r.text)
-
-
-class Firewall(object):
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-CSRFTOKEN": ""
-    }
-    params = {
-        "vdom": "root",
-        "global": 1,
-        "access_token": ""
-    }
-
-    def __init__(self):
-        auth = FirewallAuthorization()
-        auth.login()
-        auth.generate_api_key()
-        self.headers["X-CSRFTOKEN"] = auth.cookies['ccsrftoken'].replace("\"", "")
-        self.params["access_token"] = auth.content["results"]["access_token"]
-
-    def use(self, index, identity):
-        self._index = index
-        self._identity = identity
-
-    def info(self):
-        r = requests.get("http://192.168.120.200/api/v2/cmdb/firewall/address",
-                         params=self.params,
-                         headers=self.headers)
-        print(r.text)
-
+print("enter into fw_fortinet_v5_6_3/driver.py")
 
 class Driver(object):
 
     def __init__(self, conf):
-        print 'Driver.__init__'
+        print 'Init Driver Fortinet v5.6.3....'
+        self.load_conf(conf)
+        self.conf = conf
 
-    def a__init__(self, conf):
+    def load_conf(self, conf):
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
@@ -119,10 +52,16 @@ class Driver(object):
         for group_name in self.fw_identities:
             conf.register_opts(ftg_opts, group=group_name)
 
+
     def use(self, index=0, identity=None):
         self._index = index
         self._identity = identity
 
+
     def info(self):
-        print "%s %s" % (self._index,self._identity)
-        return "%s %s" % (self._index,self._identity)
+        print "This is info method:"
+        print "%s %s" % (self._index, self.fw_identities[self._index])
+        print('http_scheme : %s' % (self.conf.get(self.fw_identities[0]).http_scheme))
+        return "return value: %s %s" % (self._index, self.fw_identities[self._index])
+
+
