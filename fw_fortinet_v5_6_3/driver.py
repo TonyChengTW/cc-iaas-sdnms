@@ -1,8 +1,12 @@
+import sys
+import requests
+import socket
+import errno
+from socket import error as socket_error
+import pdb
+
 from oslo_config import cfg
 from ast import literal_eval
-
-import pdb
-import requests
 
 print("enter into fw_fortinet_v5_6_3/driver.py")
 
@@ -92,13 +96,21 @@ class Driver(object):
             self.ssh_password = self.conf.get(self.identity).ssh_password
 
         payload = {
-            "username": "tony1",
-            "secretkey": "1qaz@WSX",
+            "username": self.http_account,
+            "secretkey": self.http_password,
             "ajax": 1
         }
         print("Auth account and password via API:logincheck")
-        self.apiurl_logincheck = (self.http_scheme + '://' + self.http_host +
-                                  ':' + str(self.http_port) + '/logincheck')
+        try:
+            self.apiurl_logincheck = (self.http_scheme + '://' + self.http_host +
+                                      ':' + str(self.http_port) + '/logincheck')
+        except socket.error, msg:
+            print "Couldnt connect with the firewall: %s\n terminating program" % msg
+            sys.exit(1)
+        except socket_error:
+            if socket.error.errno != errno.ECONNREFUSED:
+                print "Connection refused: %s\n , terminating program" % socket_error
+                sys.exit(1)
 
         resp = requests.post(self.apiurl_logincheck,
                              verify=False,
