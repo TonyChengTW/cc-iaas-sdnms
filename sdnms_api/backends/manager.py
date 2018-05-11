@@ -1,5 +1,17 @@
 from sdnms_api.driver import loader
 
+from oslo_config import cfg
+
+import pdb
+
+cfg.CONF(args=None,
+         project='SDNMS',
+         version="1.0",
+         default_config_files='etc/sdnms_api/backends/fw_fortinet_v5.6.3.ini',
+         description='SDNMS Forti')
+
+conf=cfg.CONF
+
 class SampleFirewall(object):
     def use(self, index, identity):
         self._index = index
@@ -43,9 +55,9 @@ class BackendManager(object):
     m.call_firewall(method='info')
     """
     def __init__(self):
-        self._firewall = loader.firewall_driver()('hello')
-        self._waf = SampleWaf()
-        self._switch = SampleSwitch()
+        self._firewall = loader.firewall_driver()(conf)
+        #self._waf = SampleWaf()
+        #self._switch = SampleSwitch()
 
     def use_firewall(self, index=0, identity=None, selector=None):
         if selector is None:

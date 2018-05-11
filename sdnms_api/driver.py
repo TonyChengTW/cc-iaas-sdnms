@@ -33,7 +33,7 @@ class DriverLoader(object):
             self._drivers['switch'] = driver
 
     def _load_driver(self, namespace, name, invoke_load=False):
-        print namespace, name
+        print ("enter load_driver() : %s, %s" % (namespace, name))
         try:
             LOG.debug("Attempting to import driver %s", name)
             mgr = driver.DriverManager(namespace,
