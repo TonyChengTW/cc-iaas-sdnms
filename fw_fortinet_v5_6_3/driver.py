@@ -19,7 +19,7 @@ class Driver(object):
             self.apiurl_cmdb_firewall_address = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
-        self._access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
+        self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
             self.http_password = self.ssh_host = self.ssh_port = self.ssh_account = \
             self.ssh_password = ''
 
@@ -29,8 +29,8 @@ class Driver(object):
     def load_conf(self, conf):
 
         fw_default_opts = [
-            cfg.StrOpt('access_token',
-                       help='Firewall API token')
+            cfg.StrOpt('test1',
+                       help='test1')
             ]
         conf.register_opts(fw_default_opts)
 
@@ -44,8 +44,10 @@ class Driver(object):
         self.fw_identities = fw_identities
 
         ftg_opts = [
+            cfg.StrOpt('access_token',
+                       default='',
+                       help='restful api for restful api'),
             cfg.StrOpt('http_scheme',
-                       default='https',
                        help='http or https protocol for restful api'),
             cfg.StrOpt('http_host',
                        help='backend IP which provides restful api endpoint'),
@@ -70,11 +72,16 @@ class Driver(object):
         for group_name in self.fw_identities:
             conf.register_opts(ftg_opts, group=group_name)
 
-    def login(self, index=0, identity=None):
+    def login(self, index=None, identity=None):
         self.index = index
         self.identity = identity
 
+        if self.index is None and self.identity is None:
+            print "Error: you need to specify index or identity to use firewall!"
+            sys.exit(1)
+
         if self.identity is None:
+            self.access_token = self.conf.get(self.fw_identities[self.index]).access_token
             self.http_scheme = self.conf.get(self.fw_identities[self.index]).http_scheme
             self.http_host = self.conf.get(self.fw_identities[self.index]).http_host
             self.http_port = self.conf.get(self.fw_identities[self.index]).http_port
@@ -85,6 +92,7 @@ class Driver(object):
             self.ssh_account = self.conf.get(self.fw_identities[self.index]).ssh_account
             self.ssh_password = self.conf.get(self.fw_identities[self.index]).ssh_password
         else:
+            self.access_token = self.conf.get(self.identity).access_token
             self.http_scheme = self.conf.get(self.identity).http_scheme
             self.http_host = self.conf.get(self.identity).http_host
             self.http_port = self.conf.get(self.identity).http_port
@@ -149,7 +157,6 @@ class Driver(object):
         self._api_token = str(self._content['results']['access_token'])
         self._header['Authorization'] = "Bearer " + self._api_token
         """
-        self._access_token = self.conf.access_token
         self._header['X-CSRFTOKEN'] = self.cookies['ccsrftoken'].replace("\"", "")
         self._headers = {
                          #   "Authorization": self._header['Authorization'],
@@ -158,20 +165,25 @@ class Driver(object):
 
         self._params = {
                         "global": 1,
-                        "access_token": self._access_token
+                        "access_token": self.access_token
                         }
 
         print "api key is generated"
 
-    def use(self, index=0, identity=None):
+    def use(self, index=None, identity=None):
         self.login(index, identity)
         self.generate_api_key()
 
     def info(self):
         print "Function : This is info method:"
-        print "%s %s" % (self.index, self.fw_identities[self.index])
-        print 'http_host : %s' % self.conf.get(self.fw_identities[self.index]).http_host
-        return "return value: %s %s" % (self.index, self.fw_identities[self.index])
+        if self.identity is None:
+            print "fw_identities[%s] %s" % (self.index, self.fw_identities[self.index])
+            print 'http_host : %s' % self.conf.get(self.fw_identities[self.index]).http_host
+            return 0
+        else:
+            print "identity : %s" % self.identity
+            print 'http_host : %s' % self.conf.get(self.identity).http_host
+            return 0
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
@@ -183,7 +195,12 @@ class Driver(object):
                              params=self._params,
                              verify=False,
                              headers=self._headers)
-        content = literal_eval(_resp.text)
+        # pdb.set_trace()
+        try:
+            content = literal_eval(_resp.text)
+        except SyntaxError:
+            print "Error: There is no data return, maybe it is 401 Authorization Required"
+            raise
         # content = resp.text.encode('utf-8')
         print(content)
         return content  # Tony: you can use - content['results'][10]  to get value

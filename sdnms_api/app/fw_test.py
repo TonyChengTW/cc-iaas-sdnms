@@ -31,8 +31,10 @@ def run_test(config_file=None):
 
     from sdnms_api.backends.manager import BackendManager
     m = BackendManager()
-    #m.use_firewall(index=1)
-    m.use_firewall(identity='fw1')
+    # m.use_firewall(index=1)
+    # m.use_firewall(identity='fortivm1')
+    # m.use_firewall(identity='fw1')
+    m.use_firewall()
     m.call_firewall(method='info')
     m.call_firewall(method='get_addr')
 
