@@ -32,11 +32,34 @@ def run_test(config_file=None):
     from sdnms_api.backends.manager import BackendManager
     m = BackendManager()
     # m.use_firewall(index=1)
-    # m.use_firewall(identity='fortivm1')
+    m.use_firewall(identity='fortivm2')
     # m.use_firewall(identity='fw1')
-    m.use_firewall()
+    # m.use_firewall()
     m.call_firewall(method='info')
+
+    vdom = 'root'
     m.call_firewall(method='get_addr')
+
+    add_addr = {
+        'name': "11.11.11.178",
+        'type': "ipmask",
+        'comment' : "test add method",
+        'subnet': "11.11.11.178 255.255.255.255"
+    }
+    # m.call_firewall(method='add_addr', vdom=vdom, add_addr=add_addr)
+
+    del_addr = '11.11.11.178'
+    # m.call_firewall(method='del_addr', vdom=vdom, del_addr=del_addr)
+
+    set_addr = '11.11.11.178'
+    payload = {
+        'name': "11.11.11.179",
+        'type': "ipmask",
+        'comment': "test set method",
+        'subnet': "11.11.11.179 255.255.255.255"
+    }
+    m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
+                    payload=payload)
 
 if __name__ == '__main__':
     run_test()

@@ -8,6 +8,7 @@ from sdnms_api.utils import simport
 from sdnms_api.resources import health
 from sdnms_api.resources import firewall
 from sdnms_api import config
+from sdnms_api.driver import loader
 
 LOG = log.getLogger(__name__)
 CONF = config.CONF
@@ -21,13 +22,15 @@ def launch(config_file=None):
     log.register_options(CONF)
 
     config.init(config_file=config_file)
+    loader.setup(CONF)
 
     db = "mysql+mysqlconnector://{0}:{1}@{2}:{3}/{4}".format(
             CONF.database.username, CONF.database.password,
             CONF.database.address, CONF.database.port, CONF.database.database_name)
-    mgr = DBManager(db)
-    mgr.setup()
+    #mgr = DBManager(db)
+    #mgr.setup()
 
+    mgr = None
     app = falcon.API()
     health = simport.load(CONF.dispatcher.health)(mgr)
     app.add_route("/health", health)

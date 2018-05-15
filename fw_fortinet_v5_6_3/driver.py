@@ -2,6 +2,7 @@ import sys
 import requests
 import socket
 import errno
+import re
 from socket import error as socket_error
 import pdb
 
@@ -16,7 +17,7 @@ class Driver(object):
     def __init__(self, conf):
         print 'Init Driver Fortinet v5.6.3....'
         self.fw_identities = self.identity = self.apiurl_logincheck = \
-            self.apiurl_cmdb_firewall_address = ''
+            self.apiurl_cmdb_firewall_address = self.payload_add_addr = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
@@ -103,7 +104,7 @@ class Driver(object):
             self.ssh_account = self.conf.get(self.identity).ssh_account
             self.ssh_password = self.conf.get(self.identity).ssh_password
 
-        payload = {
+        payload_login = {
             "username": self.http_account,
             "secretkey": self.http_password,
             "ajax": 1
@@ -122,9 +123,9 @@ class Driver(object):
 
         resp = requests.post(self.apiurl_logincheck,
                              verify=False,
-                             data=payload)
+                             data=payload_login)
 
-        if str(resp.status_code) != '200':
+        if resp.status_code != requests.codes.ok:
             raise('Error: API: /logincheck status code is not 200')
         else:
             self.cookies = resp.cookies
@@ -164,7 +165,7 @@ class Driver(object):
                          }
 
         self._params = {
-                        "global": 1,
+                        # "global": 1,
                         "access_token": self.access_token
                         }
 
@@ -191,16 +192,83 @@ class Driver(object):
         self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
                                              ':' + str(self.http_port) +
                                              '/api/v2/cmdb/firewall/address')
-        _resp = requests.get(self.apiurl_cmdb_firewall_address,
+        resp = requests.get(self.apiurl_cmdb_firewall_address,
+                            params=self._params,
+                            verify=False,
+                            headers=self._headers)
+        re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
+        if len(re_resp) != 0:
+            print "Error: There is no data return! Respond code is 4xx"
+            return resp.raise_for_status()
+
+        try:
+            content = literal_eval(resp.text)
+            print(content)
+            return content  # Tony: you can use - content['results'][10]  to get value
+        except:
+            return resp.raise_for_status()
+
+    def add_addr(self, vdom='root', add_addr=None):
+        if add_addr is None:
+            print "Error: you need to provide ip/subnet/fqdn and type \
+                   to add address into firewall!"
+            sys.exit(1)
+
+        self._params["vdom"] = vdom
+        print "Function : This is add_addr method, vdom=%s" % vdom
+        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
+                                             ':' + str(self.http_port) +
+                                             '/api/v2/cmdb/firewall/address')
+        # pdb.set_trace()
+        resp = requests.post(self.apiurl_cmdb_firewall_address,
                              params=self._params,
+                             json=add_addr,
                              verify=False,
                              headers=self._headers)
+        if not resp.ok:
+            print "Return Code is : %s" % resp.status_code
+            print "Resp text is : %s" % resp.text
+            return resp.status_code
+
+    def del_addr(self, vdom='root', del_addr=None):
+        if del_addr is None:
+            print "Error: you need to provide ip/subnet/fqdn \
+                   to delete address from firewall!"
+            sys.exit(1)
+
+        self._params["vdom"] = vdom
+        print "Function : This is del_addr method, vdom=%s" % vdom
+        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
+                                             ':' + str(self.http_port) +
+                                             '/api/v2/cmdb/firewall/address/') + del_addr
         # pdb.set_trace()
-        try:
-            content = literal_eval(_resp.text)
-        except SyntaxError:
-            print "Error: There is no data return, maybe it is 401 Authorization Required"
-            raise
-        # content = resp.text.encode('utf-8')
-        print(content)
-        return content  # Tony: you can use - content['results'][10]  to get value
+        resp = requests.delete(self.apiurl_cmdb_firewall_address,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            print "Return Code is : %s" % resp.status_code
+            print "Resp text is : %s" % resp.text
+            return resp.status_code
+
+    def set_addr(self, vdom='root', set_addr=None, payload=None):
+        if set_addr is None:
+            print "Error: you need to provide ip/subnet/fqdn and type \
+                   to update address into firewall!"
+            sys.exit(1)
+
+        self._params["vdom"] = vdom
+        print "Function : This is set_addr method, vdom=%s" % vdom
+        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
+                                             ':' + str(self.http_port) +
+                                             '/api/v2/cmdb/firewall/address/') + set_addr
+        # pdb.set_trace()
+        resp = requests.put(self.apiurl_cmdb_firewall_address,
+                            params=self._params,
+                            json=payload,
+                            verify=False,
+                            headers=self._headers)
+        if not resp.ok:
+            print "Return Code is : %s" % resp.status_code
+            print "Resp text is : %s" % resp.text
+            return resp.status_code
