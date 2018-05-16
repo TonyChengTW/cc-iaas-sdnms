@@ -23,11 +23,12 @@ def run_test(config_file=None):
     if config_file is None:
         config_file = '/etc/sdnms_api/sdnms_api.ini'
 
-    log.set_defaults()
     log.register_options(CONF)
-
     config.init(config_file = config_file)
+    # pdb.set_trace()
     loader.setup(CONF)
+
+    log.setup(CONF, 'test1')
 
     from sdnms_api.backends.manager import BackendManager
     m = BackendManager()
@@ -38,7 +39,7 @@ def run_test(config_file=None):
     m.call_firewall(method='info')
 
     vdom = 'root'
-    m.call_firewall(method='get_addr')
+    #m.call_firewall(method='get_addr')
 
     add_addr = {
         'name': "11.11.11.178",
@@ -58,8 +59,8 @@ def run_test(config_file=None):
         'comment': "test set method",
         'subnet': "11.11.11.179 255.255.255.255"
     }
-    m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
-                    payload=payload)
+    #m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
+    #                payload=payload)
 
 if __name__ == '__main__':
     run_test()
