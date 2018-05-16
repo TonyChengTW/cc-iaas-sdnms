@@ -1,9 +1,9 @@
-import sys
 import requests
+import urllib3
 import socket
 import errno
 import re
-import pdb
+
 from ast import literal_eval
 from socket import error as socket_error
 
@@ -13,6 +13,8 @@ from oslo_log import log
 
 LOG = log.getLogger(__name__)
 LOG.info("Enter into fw_fortinet_v5_6_3/driver.py")
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Driver(object):
 
@@ -81,7 +83,6 @@ class Driver(object):
 
         if self.index is None and self.identity is None:
             LOG.error("You need to specify index or identity to use firewall!")
-            sys.exit(1)
 
         if self.identity is None:
             self.access_token = self.conf.get(self.fw_identities[self.index]).access_token
@@ -111,17 +112,15 @@ class Driver(object):
             "secretkey": self.http_password,
             "ajax": 1
         }
-        LOG.debug("Auth account and password via API: logincheck")
+        LOG.info("Auth account and password via logincheck api....")
         try:
             self.apiurl_logincheck = (self.http_scheme + '://' + self.http_host +
                                       ':' + str(self.http_port) + '/logincheck')
         except socket.error, msg:
             LOG.error("Couldnt connect with the firewall: %s\n terminating program" % msg)
-            sys.exit(1)
         except socket_error:
             if socket.error.errno != errno.ECONNREFUSED:
                 LOG.error("Connection refused: %s\n , terminating program" % socket_error)
-                sys.exit(1)
 
         resp = requests.post(self.apiurl_logincheck,
                              verify=False,
@@ -129,9 +128,9 @@ class Driver(object):
 
         if resp.status_code != requests.codes.ok:
             LOG.error("Error: API: /logincheck status code is not 200")
-            raise()
         else:
             self.cookies = resp.cookies
+            LOG.info("Auth account and password successed!")
 
     def generate_api_key(self):
 
@@ -172,14 +171,14 @@ class Driver(object):
                         "access_token": self.access_token
                         }
 
-        LOG.debug("Got api key")
+        LOG.info("FortiOS API key is ready to use")
 
     def use(self, index=None, identity=None):
         self.login(index, identity)
         self.generate_api_key()
 
     def info(self):
-        LOG.debug("This is 'info' method:")
+        LOG.info("This is 'info' method:")
         if self.identity is None:
             print "fw_identities[%s] %s" % (self.index, self.fw_identities[self.index])
             print 'http_host : %s' % self.conf.get(self.fw_identities[self.index]).http_host
@@ -191,7 +190,7 @@ class Driver(object):
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
-        LOG.debug("This is 'get_addr' method, vdom=%s" % vdom)
+        LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
         self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
                                              ':' + str(self.http_port) +
                                              '/api/v2/cmdb/firewall/address')
@@ -215,10 +214,9 @@ class Driver(object):
         if add_addr is None:
             LOG.error("Error: you need to provide ip/subnet/fqdn and type \
                    to add address into firewall!")
-            exit(1)
 
         self._params["vdom"] = vdom
-        LOG.debug("This is 'add_addr' method, vdom=%s" % vdom)
+        LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
         self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
                                              ':' + str(self.http_port) +
                                              '/api/v2/cmdb/firewall/address')
@@ -237,10 +235,9 @@ class Driver(object):
         if del_addr is None:
             LOG.error("you need to provide ip/subnet/fqdn \
                    to delete address from firewall!")
-            sys.exit(1)
 
         self._params["vdom"] = vdom
-        LOG.debug("This is 'del_addr' method, vdom=%s" % vdom)
+        LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
         self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
                                              ':' + str(self.http_port) +
                                              '/api/v2/cmdb/firewall/address/') + del_addr
@@ -258,10 +255,9 @@ class Driver(object):
         if set_addr is None:
             LOG.error("you need to provide ip/subnet/fqdn and type \
                    to update address into firewall!")
-            sys.exit(1)
 
         self._params["vdom"] = vdom
-        print "Function : This is set_addr method, vdom=%s" % vdom
+        LOG.info("This is set_addr method, vdom=%s" % vdom)
         self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
                                              ':' + str(self.http_port) +
                                              '/api/v2/cmdb/firewall/address/') + set_addr
@@ -272,8 +268,8 @@ class Driver(object):
                             verify=False,
                             headers=self._headers)
         if not resp.ok:
-            print "Return Code is : %s" % resp.status_code
-            print "Resp text is : %s" % resp.text
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
             return resp.status_code
 
     def logout(self, vdom='root'):
