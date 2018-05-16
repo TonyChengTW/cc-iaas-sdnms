@@ -18,12 +18,12 @@ setup(
         ],
         'backend.fw.drivers': [
             'fw_fortinet_v5_6_3 = fw_fortinet_v5_6_3.driver:Driver'
-#        ],
-#        'backend.waf.drivers': [
-#            'waf_f5_v13_1 = waf_f5_v13_1.driver:Driver'
-#        ],
-#        'backend.switch.drivers': [
-#            'sw_mellanox_sn2410 = mellanox_sn2410.driver:Driver'
+        ],
+        'backend.waf.drivers': [
+            'waf_f5_v13_1 = waf_f5_v13_1.driver:Driver'
+        ],
+        'backend.switch.drivers': [
+            'sw_mellanox_sn2410 = sw_mellanox_sn2410.driver:Driver'
         ]
     },
 )

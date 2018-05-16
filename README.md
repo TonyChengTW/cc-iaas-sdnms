@@ -1,7 +1,12 @@
 # Scope
 
-* relay API call from CMP to backends (one to one. **DO NOT issue additional subsequent API i.e. DO NOT control workflow !!! NO rollback !!!**)
+* relay API call from CMP to backends (one to one. **DO NOT issue additional subsequent API call i.e. NO workflow control !!! NO operation rollback !!!**)
 * record the relationship between CMP object and backend object
+
+# Future scope
+
+* SFC
+* 1 site -> 2 sites -> 3 sites (i.e. sdnms cluster)
 
 # Arch.
 
@@ -48,6 +53,38 @@ AP mode -> Master fails (unplanned outage) -> Auto-failover (promote the slave t
 |----------------------------------------------------------------------------------------------------------------------------------------------|
 ```
 
+RESTful API Internal
+
+```
+    +-------------------+
+    | Route             |
+    +-------------------+
+            ^
+            |
+            v
+    +-------------------+
+    | Resource          |
+    +-------------------+
+            ^
+            |
+            v
+    +-------------------+
+    | BackendManager    |
+    +-------------------+
+            ^
+            |
+            v
+    +-------------------+
+    | DriverManager     |
+    +-------------------+
+            ^
+            |
+            v
+    +-------------------+
+    | Driver            |
+    +-------------------+
+```
+
 Notice
 
 * The unplanned outage may lose 1 or 2 transacation(s).
@@ -58,7 +95,7 @@ Notice
 
 1. Prototype of AP mode stateful RESTful API server (1 ~ 2 weeks)
 2. Implementation of backends client librabry (1 ~ 2 weeks)
-3. Definition of CMP use cases, RESTful API spec, DB schema, backend API (4 ~ 8 weeks)
+3. Clarification of CMP use cases, RESTful API spec, DB schema, backend API usage, backend instance selection (4 ~ 8 weeks)
 4. Implementation of RESTful API (2 ~ 4 weeks)
 
 # Milestone 1 :: Prototype of AP mode stateful RESTful API server
@@ -108,7 +145,7 @@ Note
 
 * use super administrator privilege to access backend API
 
-# Milestone 3 :: Definition of CMP use cases, RESTful API spec, DB schema, backend API
+# Milestone 3 :: Clarification of CMP use cases, RESTful API spec, DB schema, backend API usage, backend instance selection
 
 CMP Use Cases
 
