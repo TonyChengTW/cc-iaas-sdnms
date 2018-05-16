@@ -1,5 +1,6 @@
 from sdnms_api.driver import loader
 
+"""
 from oslo_config import cfg
 
 import pdb
@@ -11,7 +12,7 @@ cfg.CONF(args=None,
          description='SDNMS Forti')
 
 conf=cfg.CONF
-
+"""
 class SampleFirewall(object):
     def use(self, index, identity):
         self._index = index
@@ -55,23 +56,24 @@ class BackendManager(object):
     m.call_firewall(method='info')
     """
     def __init__(self):
-        self._firewall = loader.firewall_driver()(conf)
-        #self._waf = SampleWaf()
-        #self._switch = SampleSwitch()
+        self._firewall = loader.firewall_driver()
+        # self._firewall = loader.firewall_driver()(conf)
+        self._waf = SampleWaf()
+        self._switch = SampleSwitch()
 
-    def use_firewall(self, index=None, identity=None, selector=None):
+    def use_firewall(self, index=0, identity=None, selector=None):
         if selector is None:
             self._firewall.use(index=index, identity=identity)
         else:
             self._firewall.use(**selector.select())
 
-    def use_waf(self, index=None, identity=None, selector=None):
+    def use_waf(self, index=0, identity=None, selector=None):
         if selector is None:
             self._waf.use(index=index, identity=identity)
         else:
             self._waf.use(**selector.select())
 
-    def use_switch(self, index=None, identity=None, selector=None):
+    def use_switch(self, index=0, identity=None, selector=None):
         if selector is None:
             self._switch.use(index=index, identity=identity)
         else:
