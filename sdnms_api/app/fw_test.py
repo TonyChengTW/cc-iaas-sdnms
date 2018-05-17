@@ -32,26 +32,32 @@ def run_test(config_file=None):
 
     from sdnms_api.backends.manager import BackendManager
     m = BackendManager()
+    # -------- Use Firewall -------------------------------------------------
     # m.use_firewall(index=1)
     m.use_firewall(identity='fortivm2')
     # m.use_firewall(identity='fw1')
     # m.use_firewall()
     m.call_firewall(method='info')
-
     vdom = 'root'
-    #m.call_firewall(method='get_addr')
 
+    """
+    # -------- Get Addr -------------------------------------------------
+
+    m.call_firewall(method='get_addr', vdom=vdom)
+    # -------- Add Addr -------------------------------------------------
     add_addr = {
         'name': "11.11.11.178",
         'type': "ipmask",
         'comment' : "test add method",
         'subnet': "11.11.11.178 255.255.255.255"
     }
-    # m.call_firewall(method='add_addr', vdom=vdom, add_addr=add_addr)
+    m.call_firewall(method='add_addr', vdom=vdom, add_addr=add_addr)
 
+    # -------- Del Addr -------------------------------------------------
     del_addr = '11.11.11.178'
-    # m.call_firewall(method='del_addr', vdom=vdom, del_addr=del_addr)
+    m.call_firewall(method='del_addr', vdom=vdom, del_addr=del_addr)
 
+    # -------- Set Addr -------------------------------------------------
     set_addr = '11.11.11.178'
     payload = {
         'name': "11.11.11.179",
@@ -59,8 +65,34 @@ def run_test(config_file=None):
         'comment': "test set method",
         'subnet': "11.11.11.179 255.255.255.255"
     }
-    #m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
-    #                payload=payload)
+    m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
+                    payload=payload)
+    """
+    # ------------  Get VIP -----------------------------------------------
+    m.call_firewall(method='get_vip', vdom=vdom)
 
+    """
+    # ------------  Add VIP -----------------------------------------------
+    payload = {
+       "name":"vm3-ssh",
+       "comment":"",
+       "type":"static-nat",
+       "extip":"100.100.100.103",
+       "mappedip":[
+         {
+           "range":"11.11.11.103"
+         }
+       ],
+       "extintf":"port1",
+       "nat-source-vip":"disable",
+       "portforward":"enable",
+       "protocol":"ssh",
+       "extport":"22",
+       "mappedport":"22",
+       "portmapping-type":"1-to-1"
+    }
+    m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
+    """
+    m.call_firewall(method='logout')
 if __name__ == '__main__':
     run_test()

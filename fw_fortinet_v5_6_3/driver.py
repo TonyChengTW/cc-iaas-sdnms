@@ -16,15 +16,14 @@ LOG.info("Enter into fw_fortinet_v5_6_3/driver.py")
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class Driver(object):
 
+class Driver(object):
     def __init__(self, conf):
         LOG.debug("Init Driver Fortinet v5.6.3...")
-        self.fw_identities = self.identity = self.apiurl_logincheck = \
-            self.apiurl_cmdb_firewall_address = self.apiurl_cmdb_firewall_logout = \
-            self.payload_add_addr = ''
+        self.fw_identities = self.identity = self.apiurl = self.payload_add_addr = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
+        self.cookies = {}
         self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
             self.http_password = self.ssh_host = self.ssh_port = self.ssh_account = \
             self.ssh_password = ''
@@ -114,15 +113,15 @@ class Driver(object):
         }
         LOG.info("Auth account and password via logincheck api....")
         try:
-            self.apiurl_logincheck = (self.http_scheme + '://' + self.http_host +
-                                      ':' + str(self.http_port) + '/logincheck')
+            self.apiurl = (self.http_scheme + '://' + self.http_host +
+                           ':' + str(self.http_port) + '/logincheck')
         except socket.error, msg:
-            LOG.error("Couldnt connect with the firewall: %s\n terminating program" % msg)
-        except socket_error:
+            LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
+        except RuntimeError:
             if socket.error.errno != errno.ECONNREFUSED:
                 LOG.error("Connection refused: %s\n , terminating program" % socket_error)
 
-        resp = requests.post(self.apiurl_logincheck,
+        resp = requests.post(self.apiurl,
                              verify=False,
                              data=payload_login)
 
@@ -134,7 +133,7 @@ class Driver(object):
 
     def generate_api_key(self):
 
-        """"
+        """
         self._headers = {}
         self._content = {}
 
@@ -191,10 +190,10 @@ class Driver(object):
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
-        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
-                                             ':' + str(self.http_port) +
-                                             '/api/v2/cmdb/firewall/address')
-        resp = requests.get(self.apiurl_cmdb_firewall_address,
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/address')
+        resp = requests.get(self.apiurl,
                             params=self._params,
                             verify=False,
                             headers=self._headers)
@@ -206,24 +205,26 @@ class Driver(object):
         try:
             content = literal_eval(resp.text)
             print(content)
-            return content  # Tony: you can use - content['results'][10]  to get value
-        except:
+
+            # NOTE(tonycheng): You can use "content['results'][10]" to get value
+            return content
+        except RuntimeError:
             return resp.raise_for_status()
 
-    def add_addr(self, vdom='root', add_addr=None):
-        if add_addr is None:
+    def add_addr(self, vdom='root', payload=None):
+        if payload is None:
             LOG.error("Error: you need to provide ip/subnet/fqdn and type \
                    to add address into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
-        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
-                                             ':' + str(self.http_port) +
-                                             '/api/v2/cmdb/firewall/address')
-        # pdb.set_trace()
-        resp = requests.post(self.apiurl_cmdb_firewall_address,
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/address')
+
+        resp = requests.post(self.apiurl,
                              params=self._params,
-                             json=add_addr,
+                             json=payload,
                              verify=False,
                              headers=self._headers)
         if not resp.ok:
@@ -231,18 +232,18 @@ class Driver(object):
             LOG.error("Resp text is : %s" % resp.text)
             return resp.status_code
 
-    def del_addr(self, vdom='root', del_addr=None):
-        if del_addr is None:
+    def del_addr(self, vdom='root', name=None):
+        if name is None:
             LOG.error("you need to provide ip/subnet/fqdn \
                    to delete address from firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
-                                             ':' + str(self.http_port) +
-                                             '/api/v2/cmdb/firewall/address/') + del_addr
-        # pdb.set_trace()
-        resp = requests.delete(self.apiurl_cmdb_firewall_address,
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/address/') + name
+
+        resp = requests.delete(self.apiurl,
                                params=self._params,
                                verify=False,
                                headers=self._headers)
@@ -251,18 +252,18 @@ class Driver(object):
             LOG.error("Resp text is : %s" % resp.text)
             return resp.status_code
 
-    def set_addr(self, vdom='root', set_addr=None, payload=None):
-        if set_addr is None:
+    def set_addr(self, vdom='root', name=None, payload=None):
+        if name is None or payload is None:
             LOG.error("you need to provide ip/subnet/fqdn and type \
                    to update address into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is set_addr method, vdom=%s" % vdom)
-        self.apiurl_cmdb_firewall_address = (self.http_scheme + '://' + self.http_host +
-                                             ':' + str(self.http_port) +
-                                             '/api/v2/cmdb/firewall/address/') + set_addr
-        # pdb.set_trace()
-        resp = requests.put(self.apiurl_cmdb_firewall_address,
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/address/') + name
+
+        resp = requests.put(self.apiurl,
                             params=self._params,
                             json=payload,
                             verify=False,
@@ -272,13 +273,57 @@ class Driver(object):
             LOG.error("Resp text is : %s" % resp.text)
             return resp.status_code
 
-    def logout(self, vdom='root'):
+    def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
-        self.apiurl_cmdb_firewall_logout = (self.http_scheme + '://' + self.http_host +
-                                            ':' + str(self.http_port) + '/logout')
-        resp = requests.post(self.apiurl_cmdb_firewall_logout,
+        LOG.info("This is 'get_vip' method, vdom=%s" % vdom)
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/vip/vm3-icmp')
+        resp = requests.get(self.apiurl,
+                            params=self._params,
+                            verify=False,
+                            headers=self._headers)
+        re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
+        if len(re_resp) != 0:
+            LOG.error("There is no data return! Respond code is 4xx")
+            return resp.raise_for_status()
+
+        try:
+            content = literal_eval(resp.text)
+            print(content)
+
+            # NOTE(tonycheng): You can use "content['results'][10]" to get value
+            return content
+        except RuntimeError:
+            return resp.raise_for_status()
+
+    def add_vip(self, vdom='root', payload=None):
+        if payload is None:
+            LOG.error("you need to provide something \
+                   to add virtual IP into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is add_vip method, vdom=%s" % vdom)
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/vip/')
+
+        resp = requests.post(self.apiurl,
                              params=self._params,
+                             json=payload,
+                             verify=False,
+                             headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+            return resp.status_code
+
+    def logout(self):
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) + '/logout')
+        resp = requests.post(self.apiurl,
                              verify=False,
                              headers=self._headers)
         resp.cookies.clear()
-        print resp.text
+        LOG.info("Log-out and clear cookies : %s" % resp.text)
