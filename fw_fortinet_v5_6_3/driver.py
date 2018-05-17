@@ -131,6 +131,15 @@ class Driver(object):
             self.cookies = resp.cookies
             LOG.info("Auth account and password successed!")
 
+    def logout(self):
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) + '/logout')
+        resp = requests.post(self.apiurl,
+                             verify=False,
+                             headers=self._headers)
+        resp.cookies.clear()
+        LOG.info("Log-out and clear cookies : %s" % resp.text)
+
     def generate_api_key(self):
 
         """
@@ -200,6 +209,7 @@ class Driver(object):
         re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
         if len(re_resp) != 0:
             LOG.error("There is no data return! Respond code is 4xx")
+            LOG.error("Resp reason is : %s" % resp.reason)
             return resp.raise_for_status()
 
         try:
@@ -209,6 +219,7 @@ class Driver(object):
             # NOTE(tonycheng): You can use "content['results'][10]" to get value
             return content
         except RuntimeError:
+            LOG.error("Resp reason is : %s" % resp.reason)
             return resp.raise_for_status()
 
     def add_addr(self, vdom='root', payload=None):
@@ -230,7 +241,10 @@ class Driver(object):
         if not resp.ok:
             LOG.error("Return Code is : %s" % resp.status_code)
             LOG.error("Resp text is : %s" % resp.text)
-            return resp.status_code
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
 
     def del_addr(self, vdom='root', name=None):
         if name is None:
@@ -250,7 +264,10 @@ class Driver(object):
         if not resp.ok:
             LOG.error("Return Code is : %s" % resp.status_code)
             LOG.error("Resp text is : %s" % resp.text)
-            return resp.status_code
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
 
     def set_addr(self, vdom='root', name=None, payload=None):
         if name is None or payload is None:
@@ -271,14 +288,17 @@ class Driver(object):
         if not resp.ok:
             LOG.error("Return Code is : %s" % resp.status_code)
             LOG.error("Resp text is : %s" % resp.text)
-            return resp.status_code
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
 
     def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_vip' method, vdom=%s" % vdom)
         self.apiurl = (self.http_scheme + '://' + self.http_host +
                        ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/vip/vm3-icmp')
+                       '/api/v2/cmdb/firewall/vip/')
         resp = requests.get(self.apiurl,
                             params=self._params,
                             verify=False,
@@ -286,6 +306,7 @@ class Driver(object):
         re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
         if len(re_resp) != 0:
             LOG.error("There is no data return! Respond code is 4xx")
+            LOG.error("Resp reason is : %s" % resp.reason)
             return resp.raise_for_status()
 
         try:
@@ -295,6 +316,7 @@ class Driver(object):
             # NOTE(tonycheng): You can use "content['results'][10]" to get value
             return content
         except RuntimeError:
+            LOG.error("Resp reason is : %s" % resp.reason)
             return resp.raise_for_status()
 
     def add_vip(self, vdom='root', payload=None):
@@ -317,13 +339,53 @@ class Driver(object):
             LOG.error("Return Code is : %s" % resp.status_code)
             LOG.error("Resp text is : %s" % resp.text)
             LOG.error("Resp reason is : %s" % resp.reason)
-            return resp.status_code
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
 
-    def logout(self):
+    def del_vip(self, vdom='root', name=None):
+        if name is None:
+            LOG.error("you need to VIP name \
+                   to delete virtual ip from firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
         self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) + '/logout')
-        resp = requests.post(self.apiurl,
-                             verify=False,
-                             headers=self._headers)
-        resp.cookies.clear()
-        LOG.info("Log-out and clear cookies : %s" % resp.text)
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/vip/') + name
+
+        resp = requests.delete(self.apiurl,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
+
+    def set_vip(self, vdom='root', name=None, payload=None):
+        if payload is None or name is None:
+            LOG.error("you need to provide something \
+                   to update virtual IP into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is set_vip method, vdom=%s" % vdom)
+        self.apiurl = (self.http_scheme + '://' + self.http_host +
+                       ':' + str(self.http_port) +
+                       '/api/v2/cmdb/firewall/vip/') + name
+
+        resp = requests.put(self.apiurl,
+                            params=self._params,
+                            json=payload,
+                            verify=False,
+                            headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code

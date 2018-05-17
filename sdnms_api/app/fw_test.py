@@ -54,30 +54,31 @@ def run_test(config_file=None):
     m.call_firewall(method='add_addr', vdom=vdom, add_addr=add_addr)
 
     # -------- Del Addr -------------------------------------------------
-    del_addr = '11.11.11.178'
-    m.call_firewall(method='del_addr', vdom=vdom, del_addr=del_addr)
+    name = '11.11.11.178'
+    m.call_firewall(method='del_addr', vdom=vdom, name=name)
 
     # -------- Set Addr -------------------------------------------------
-    set_addr = '11.11.11.178'
+    name = '11.11.11.178'
     payload = {
         'name': "11.11.11.179",
         'type': "ipmask",
         'comment': "test set method",
         'subnet': "11.11.11.179 255.255.255.255"
     }
-    m.call_firewall(method='set_addr', vdom=vdom, set_addr=set_addr,
+    m.call_firewall(method='set_addr', vdom=vdom, name=name,
                     payload=payload)
-    """
+
     # ------------  Get VIP -----------------------------------------------
     m.call_firewall(method='get_vip', vdom=vdom)
-
     """
-    # ------------  Add VIP -----------------------------------------------
+
+    # ------------  Add/Set VIP -----------------------------------------------
+    name = "vm3-icmp"
     payload = {
-       "name":"vm3-ssh",
+       "name":"vm3-ssh-update",
        "comment":"",
        "type":"static-nat",
-       "extip":"100.100.100.103",
+       "extip":"100.100.100.104",
        "mappedip":[
          {
            "range":"11.11.11.103"
@@ -86,13 +87,20 @@ def run_test(config_file=None):
        "extintf":"port1",
        "nat-source-vip":"disable",
        "portforward":"enable",
-       "protocol":"ssh",
-       "extport":"22",
-       "mappedport":"22",
+       "protocol":"telnet",
+       "extport":"23",
+       "mappedport":"23",
        "portmapping-type":"1-to-1"
     }
-    m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
+    # m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
+    m.call_firewall(method='set_vip', vdom=vdom, payload=payload, name=name)
+
+
+    """
+    name = 'vm3-ssh'
+    m.call_firewall(method='del_vip', vdom=vdom, name=name)
     """
     m.call_firewall(method='logout')
+
 if __name__ == '__main__':
     run_test()
