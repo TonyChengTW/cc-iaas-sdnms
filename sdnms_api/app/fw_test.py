@@ -37,21 +37,30 @@ def run_test(config_file=None):
     m.use_firewall(identity='fortivm2')
     # m.use_firewall(identity='fw1')
     # m.use_firewall()
-    m.call_firewall(method='info')
+
     vdom = 'root'
+    # m.call_firewall(method='info')
+
+    # -------- Add VDOM ------------------------------------------------------
+    name = 'tony3'
+    m.call_firewall(method='add_vdom', name=name)
+
+    # m.call_firewall(method='get_vdom')
+
 
     """
     # -------- Get Addr -------------------------------------------------
-
     m.call_firewall(method='get_addr', vdom=vdom)
+
+
     # -------- Add Addr -------------------------------------------------
-    add_addr = {
+    payload = {
         'name': "11.11.11.178",
         'type': "ipmask",
         'comment' : "test add method",
         'subnet': "11.11.11.178 255.255.255.255"
     }
-    m.call_firewall(method='add_addr', vdom=vdom, add_addr=add_addr)
+    m.call_firewall(method='add_addr', vdom=vdom, payload=payload)
 
     # -------- Del Addr -------------------------------------------------
     name = '11.11.11.178'
@@ -97,7 +106,7 @@ def run_test(config_file=None):
     name = 'vm3-ssh'
     m.call_firewall(method='del_vip', vdom=vdom, name=name)
     """
-    m.call_firewall(method='get_vipgrp', vdom=vdom)
+    #m.call_firewall(method='get_vipgrp', vdom=vdom)
     m.call_firewall(method='logout')
 
 if __name__ == '__main__':

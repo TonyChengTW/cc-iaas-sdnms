@@ -2,6 +2,7 @@ import requests
 import urllib3
 import socket
 import errno
+import re
 
 from netmiko import Netmiko
 from ast import literal_eval
@@ -19,14 +20,15 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Driver(object):
     def __init__(self, conf):
-        self.ftg = {}
-        self.fw_identities = self.identity = self.endpoint = self.payload_add_addr = ''
+        self.fw_identities = self.identity = self.endpoint = self.payload_add_addr = \
+            self.clioutput = self.output = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.cookies = {}
         self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
             self.http_password = self.ssh_host = self.ssh_port = self.ssh_account = \
             self.ssh_password = ''
+
         """ Load ini config from CLI parameters """
         self._load_conf(conf)
         self.conf = conf
@@ -141,7 +143,9 @@ class Driver(object):
                              verify=False,
                              headers=self._headers)
         resp.cookies.clear()
-        LOG.info("Log-out and clear cookies : %s" % resp.text)
+        LOG.debug("Log-out and clear cookies : %s" % resp.text)
+        self.net_connect.disconnect()
+        LOG.debug("Disconnect SSH CLI")
 
     def _generate_api_key(self):
         """
@@ -178,14 +182,14 @@ class Driver(object):
                          }
 
         self._params = {
-                        # "global": 1,
+                        "global": 1,
                         "access_token": self.access_token
                         }
 
         LOG.info("FortiOS API key is ready to use")
 
     def _ftg_init(self):
-        self.ftg = {
+        ftg = {
             'host': self.ssh_host,
             'port': self.ssh_port,
             'username': self.ssh_account,
@@ -193,7 +197,7 @@ class Driver(object):
             'device_type': 'fortinet',
             'verbose': False
         }
-        self.net_connect = Netmiko(**self.ftg)
+        self.net_connect = Netmiko(**ftg)
         self._disable_paging()
 
     def _disable_paging(self):
@@ -230,10 +234,98 @@ class Driver(object):
             output = self.net_connect.send_command_timing(command)
             print("+-----------------------------------------------------+")
             print(output)
-            print("+-----------------------------------------------------+")
 
-        self.net_connect.disconnect()
         return 0
+
+    def get_vdom(self):
+        LOG.info("This is 'get_vdom' method")
+        exist_vdoms = self._get_vdom_without_print()
+        print("+--------------- Get VDOM -----------------------------------+")
+        print("VDOMs:\n-------------------------------------------------------------")
+        for exist_vdom in exist_vdoms:
+            print exist_vdom
+        return 0
+
+    def _get_vdom_without_print(self):
+        exist_vdoms = []
+        output = ''
+        command_set = [
+            'config global',
+            'config system vdom-property',
+            'show | grep edit',
+            'end\nend'
+        ]
+        for command in command_set:
+            if command == command_set[2]:
+                clioutput = self.net_connect.send_command_timing(command)
+                output = clioutput.encode('utf-8')
+            else:
+                self.net_connect.send_command_timing(command)
+
+            if 'fail' in output or 'Unknown' in output:
+                LOG.error("%s" % output)
+                raise RuntimeError
+
+        prog = re.compile('edit \"(.*)\"', re.MULTILINE)
+
+        for result in prog.finditer(output):
+            exist_vdoms.append(result.group(1))
+        return exist_vdoms
+
+    def add_vdom(self, name=None):
+        clioutput = output = ''
+        LOG.info("This is 'add_vdom' method")
+        exist_vdoms = self._get_vdom_without_print()
+
+        if name is None:
+            LOG.error("you need to provide VDOM name!")
+
+        if name in exist_vdoms:
+            LOG.error("This vdom : '%s' is already exist!!" % name)
+            raise RuntimeError
+
+        sub_command = "edit %s" % name
+        command_set = [
+            'config vdom',
+            sub_command,
+            'end'
+        ]
+        for command in command_set:
+            if command == command_set[1]:
+                clioutput = self.net_connect.send_command_timing(command)
+                output = clioutput.encode('utf-8')
+            else:
+                self.net_connect.send_command_timing(command)
+            if 'fail' in output or 'Unknown' in output:
+                LOG.error("command: %s , respond: %s" % (command, clioutput))
+                raise RuntimeError
+        print("+-----------------------------------------------------+")
+        print "FTG Console : %s" % output
+        LOG.info("VDOM: %s Created!" % name)
+        return 0
+
+    def del_vdom(self, vdom='root', name=None):
+        if name is None:
+            LOG.error("you need to provide ip/subnet/fqdn \
+                   to delete address from firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/address/') + name
+
+        resp = requests.delete(self.endpoint,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.status_code
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
