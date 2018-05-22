@@ -2,8 +2,8 @@ import requests
 import urllib3
 import socket
 import errno
-import re
 
+from netmiko import Netmiko
 from ast import literal_eval
 from socket import error as socket_error
 
@@ -12,32 +12,33 @@ from oslo_log import log
 
 
 LOG = log.getLogger(__name__)
-LOG.info("Enter into fw_fortinet_v5_6_3/driver.py")
+print("Enter into fw_fortinet_v5_6_3/driver.py")
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Driver(object):
     def __init__(self, conf):
-        LOG.debug("Init Driver Fortinet v5.6.3...")
-        self.fw_identities = self.identity = self.apiurl = self.payload_add_addr = ''
+        self.ftg = {}
+        self.fw_identities = self.identity = self.endpoint = self.payload_add_addr = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.cookies = {}
         self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
             self.http_password = self.ssh_host = self.ssh_port = self.ssh_account = \
             self.ssh_password = ''
-
-        self.load_conf(conf)
+        """ Load ini config from CLI parameters """
+        self._load_conf(conf)
         self.conf = conf
 
-    def load_conf(self, conf):
+    def _load_conf(self, conf):
+        """
         fw_default_opts = [
-            cfg.StrOpt('test1',
-                       help='test1')
+            cfg.StrOpt('opt',
+                       help='opt')
             ]
         conf.register_opts(fw_default_opts)
-
+        """
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
@@ -76,7 +77,8 @@ class Driver(object):
         for group_name in self.fw_identities:
             conf.register_opts(ftg_opts, group=group_name)
 
-    def login(self, index=None, identity=None):
+    def _login(self, index=None, identity=None):
+        LOG.debug("This is '_login' method")
         self.index = index
         self.identity = identity
 
@@ -113,15 +115,15 @@ class Driver(object):
         }
         LOG.info("Auth account and password via logincheck api....")
         try:
-            self.apiurl = (self.http_scheme + '://' + self.http_host +
-                           ':' + str(self.http_port) + '/logincheck')
+            self.endpoint = (self.http_scheme + '://' + self.http_host +
+                             ':' + str(self.http_port) + '/logincheck')
         except socket.error, msg:
             LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
         except RuntimeError:
             if socket.error.errno != errno.ECONNREFUSED:
                 LOG.error("Connection refused: %s\n , terminating program" % socket_error)
 
-        resp = requests.post(self.apiurl,
+        resp = requests.post(self.endpoint,
                              verify=False,
                              data=payload_login)
 
@@ -132,16 +134,16 @@ class Driver(object):
             LOG.info("Auth account and password successed!")
 
     def logout(self):
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) + '/logout')
-        resp = requests.post(self.apiurl,
+        LOG.debug("This is 'logout' method")
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) + '/logout')
+        resp = requests.post(self.endpoint,
                              verify=False,
                              headers=self._headers)
         resp.cookies.clear()
         LOG.info("Log-out and clear cookies : %s" % resp.text)
 
-    def generate_api_key(self):
-
+    def _generate_api_key(self):
         """
         self._headers = {}
         self._content = {}
@@ -168,6 +170,7 @@ class Driver(object):
         self._api_token = str(self._content['results']['access_token'])
         self._header['Authorization'] = "Bearer " + self._api_token
         """
+        LOG.debug("This is '_generate_api_key' method")
         self._header['X-CSRFTOKEN'] = self.cookies['ccsrftoken'].replace("\"", "")
         self._headers = {
                          #   "Authorization": self._header['Authorization'],
@@ -181,45 +184,79 @@ class Driver(object):
 
         LOG.info("FortiOS API key is ready to use")
 
+    def _ftg_init(self):
+        self.ftg = {
+            'host': self.ssh_host,
+            'port': self.ssh_port,
+            'username': self.ssh_account,
+            'password': self.ssh_password,
+            'device_type': 'fortinet',
+            'verbose': False
+        }
+        self.net_connect = Netmiko(**self.ftg)
+        self._disable_paging()
+
+    def _disable_paging(self):
+        disable_paging_commands = [
+            "config global",
+            "config system console",
+            "set output standard",
+            "end",
+            "end"
+        ]
+        for command in disable_paging_commands:
+            self.net_connect.send_command_timing(command)
+
     def use(self, index=None, identity=None):
-        self.login(index, identity)
-        self.generate_api_key()
+        LOG.debug("This is 'use' method")
+        self._login(index, identity)
+        self._generate_api_key()
+        self._ftg_init()
 
     def info(self):
-        LOG.info("This is 'info' method:")
+        LOG.info("This is 'info' method")
+
         if self.identity is None:
             print "fw_identities[%s] %s" % (self.index, self.fw_identities[self.index])
             print 'http_host : %s' % self.conf.get(self.fw_identities[self.index]).http_host
-            return 0
         else:
             print "identity : %s" % self.identity
             print 'http_host : %s' % self.conf.get(self.identity).http_host
-            return 0
+
+        command_set = [
+            'get system status'
+        ]
+        for command in command_set:
+            output = self.net_connect.send_command_timing(command)
+            print("+-----------------------------------------------------+")
+            print(output)
+            print("+-----------------------------------------------------+")
+
+        self.net_connect.disconnect()
+        return 0
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/address')
-        resp = requests.get(self.apiurl,
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/address')
+        resp = requests.get(self.endpoint,
                             params=self._params,
                             verify=False,
                             headers=self._headers)
-        re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
-        if len(re_resp) != 0:
-            LOG.error("There is no data return! Respond code is 4xx")
-            LOG.error("Resp reason is : %s" % resp.reason)
-            return resp.raise_for_status()
+        if resp.ok:
+            try:
+                content = literal_eval(resp.text)
+                print(content)
 
-        try:
-            content = literal_eval(resp.text)
-            print(content)
-
-            # NOTE(tonycheng): You can use "content['results'][10]" to get value
-            return content
-        except RuntimeError:
-            LOG.error("Resp reason is : %s" % resp.reason)
+                # NOTE(tonycheng): You can use "content['results'][10]" to get value
+                return content
+            except RuntimeError:
+                LOG.error("Unknown error when parsing resp.text")
+        else:
+            LOG.error("Resp text : %s" % resp.text)
+            LOG.error("Resp reason : %s" % resp.reason)
             return resp.raise_for_status()
 
     def add_addr(self, vdom='root', payload=None):
@@ -229,11 +266,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/address')
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/address')
 
-        resp = requests.post(self.apiurl,
+        resp = requests.post(self.endpoint,
                              params=self._params,
                              json=payload,
                              verify=False,
@@ -253,11 +290,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/address/') + name
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/address/') + name
 
-        resp = requests.delete(self.apiurl,
+        resp = requests.delete(self.endpoint,
                                params=self._params,
                                verify=False,
                                headers=self._headers)
@@ -276,11 +313,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is set_addr method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/address/') + name
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/address/') + name
 
-        resp = requests.put(self.apiurl,
+        resp = requests.put(self.endpoint,
                             params=self._params,
                             json=payload,
                             verify=False,
@@ -296,27 +333,25 @@ class Driver(object):
     def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_vip' method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/vip/')
-        resp = requests.get(self.apiurl,
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/vip/')
+        resp = requests.get(self.endpoint,
                             params=self._params,
                             verify=False,
                             headers=self._headers)
-        re_resp = re.findall(r'^<TITLE>4[0-9][0-9]', resp.text, flags=re.MULTILINE)
-        if len(re_resp) != 0:
-            LOG.error("There is no data return! Respond code is 4xx")
-            LOG.error("Resp reason is : %s" % resp.reason)
-            return resp.raise_for_status()
+        if resp.ok:
+            try:
+                content = literal_eval(resp.text)
+                print(content)
 
-        try:
-            content = literal_eval(resp.text)
-            print(content)
-
-            # NOTE(tonycheng): You can use "content['results'][10]" to get value
-            return content
-        except RuntimeError:
-            LOG.error("Resp reason is : %s" % resp.reason)
+                # NOTE(tonycheng): You can use "content['results'][10]" to get value
+                return content
+            except RuntimeError:
+                LOG.error("Unknown error when parsing resp.text")
+        else:
+            LOG.error("Resp text : %s" % resp.text)
+            LOG.error("Resp reason : %s" % resp.reason)
             return resp.raise_for_status()
 
     def add_vip(self, vdom='root', payload=None):
@@ -326,11 +361,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is add_vip method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/vip/')
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/vip/')
 
-        resp = requests.post(self.apiurl,
+        resp = requests.post(self.endpoint,
                              params=self._params,
                              json=payload,
                              verify=False,
@@ -350,11 +385,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/vip/') + name
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/vip/') + name
 
-        resp = requests.delete(self.apiurl,
+        resp = requests.delete(self.endpoint,
                                params=self._params,
                                verify=False,
                                headers=self._headers)
@@ -373,11 +408,11 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is set_vip method, vdom=%s" % vdom)
-        self.apiurl = (self.http_scheme + '://' + self.http_host +
-                       ':' + str(self.http_port) +
-                       '/api/v2/cmdb/firewall/vip/') + name
+        self.endpoint = (self.http_scheme + '://' + self.http_host +
+                         ':' + str(self.http_port) +
+                         '/api/v2/cmdb/firewall/vip/') + name
 
-        resp = requests.put(self.apiurl,
+        resp = requests.put(self.endpoint,
                             params=self._params,
                             json=payload,
                             verify=False,
@@ -389,3 +424,11 @@ class Driver(object):
         else:
             LOG.info("Resp text is : %s" % resp.text)
         return resp.status_code
+
+    def get_vipgrp(self, vdom='root'):
+        """Not Implemented"""
+        raise NotImplementedError
+
+    def save_config(self, vdom='root'):
+        """Not Implemented"""
+        raise NotImplementedError

@@ -70,7 +70,6 @@ def run_test(config_file=None):
 
     # ------------  Get VIP -----------------------------------------------
     m.call_firewall(method='get_vip', vdom=vdom)
-    """
 
     # ------------  Add/Set VIP -----------------------------------------------
     name = "vm3-icmp"
@@ -92,14 +91,13 @@ def run_test(config_file=None):
        "mappedport":"23",
        "portmapping-type":"1-to-1"
     }
-    # m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
+    m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
     m.call_firewall(method='set_vip', vdom=vdom, payload=payload, name=name)
 
-
-    """
     name = 'vm3-ssh'
     m.call_firewall(method='del_vip', vdom=vdom, name=name)
     """
+    m.call_firewall(method='get_vipgrp', vdom=vdom)
     m.call_firewall(method='logout')
 
 if __name__ == '__main__':
