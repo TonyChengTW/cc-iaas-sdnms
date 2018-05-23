@@ -38,17 +38,17 @@ def run_test(config_file=None):
     # m.use_firewall(identity='fw1')
     # m.use_firewall()
 
-    vdom = 'root'
-    # m.call_firewall(method='info')
+    vdom = 'tony3'
+
+    """
+    m.call_firewall(method='info')
 
     # -------- Add VDOM ------------------------------------------------------
     name = 'tony3'
     m.call_firewall(method='add_vdom', name=name)
 
-    # m.call_firewall(method='get_vdom')
+    m.call_firewall(method='get_vdom')
 
-
-    """
     # -------- Get Addr -------------------------------------------------
     m.call_firewall(method='get_addr', vdom=vdom)
 
@@ -62,9 +62,12 @@ def run_test(config_file=None):
     }
     m.call_firewall(method='add_addr', vdom=vdom, payload=payload)
 
+
+
     # -------- Del Addr -------------------------------------------------
-    name = '11.11.11.178'
-    m.call_firewall(method='del_addr', vdom=vdom, name=name)
+    # name = '11.11.11.178'
+    # m.call_firewall(method='del_addr', vdom=vdom, name=name)
+
 
     # -------- Set Addr -------------------------------------------------
     name = '11.11.11.178'
@@ -77,22 +80,24 @@ def run_test(config_file=None):
     m.call_firewall(method='set_addr', vdom=vdom, name=name,
                     payload=payload)
 
+
+    """
     # ------------  Get VIP -----------------------------------------------
     m.call_firewall(method='get_vip', vdom=vdom)
 
     # ------------  Add/Set VIP -----------------------------------------------
-    name = "vm3-icmp"
+    name = "test1"
     payload = {
-       "name":"vm3-ssh-update",
+       "name":"test1",
        "comment":"",
        "type":"static-nat",
-       "extip":"100.100.100.104",
+       "extip":"103.103.103.103",
        "mappedip":[
          {
-           "range":"11.11.11.103"
+           "range":"13.13.13.103"
          }
        ],
-       "extintf":"port1",
+       "extintf":"any",
        "nat-source-vip":"disable",
        "portforward":"enable",
        "protocol":"telnet",
@@ -100,12 +105,12 @@ def run_test(config_file=None):
        "mappedport":"23",
        "portmapping-type":"1-to-1"
     }
-    m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
-    m.call_firewall(method='set_vip', vdom=vdom, payload=payload, name=name)
+    # m.call_firewall(method='add_vip', vdom=vdom, payload=payload)
 
-    name = 'vm3-ssh'
+    # m.call_firewall(method='set_vip', vdom=vdom, payload=payload, name=name)
+
+    name = 'test1'
     m.call_firewall(method='del_vip', vdom=vdom, name=name)
-    """
     #m.call_firewall(method='get_vipgrp', vdom=vdom)
     m.call_firewall(method='logout')
 

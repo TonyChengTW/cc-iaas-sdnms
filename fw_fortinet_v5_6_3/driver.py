@@ -1,16 +1,13 @@
-import requests
+import re
 import urllib3
 import socket
-import errno
-import re
-
-from netmiko import Netmiko
-from ast import literal_eval
 from socket import error as socket_error
+from ast import literal_eval
 
+import requests
+from netmiko import Netmiko
 from oslo_config import cfg
 from oslo_log import log
-
 
 LOG = log.getLogger(__name__)
 print("Enter into fw_fortinet_v5_6_3/driver.py")
@@ -20,8 +17,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Driver(object):
     def __init__(self, conf):
-        self.fw_identities = self.identity = self.endpoint = self.payload_add_addr = \
-            self.clioutput = self.output = ''
+        self.fw_identities = self.identity = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.cookies = {}
@@ -34,13 +30,6 @@ class Driver(object):
         self.conf = conf
 
     def _load_conf(self, conf):
-        """
-        fw_default_opts = [
-            cfg.StrOpt('opt',
-                       help='opt')
-            ]
-        conf.register_opts(fw_default_opts)
-        """
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
@@ -79,13 +68,83 @@ class Driver(object):
         for group_name in self.fw_identities:
             conf.register_opts(ftg_opts, group=group_name)
 
-    def _login(self, index=None, identity=None):
+    def _login(self):
         LOG.debug("This is '_login' method")
+        payload_login = {"username": self.http_account,
+                         "secretkey": self.http_password,
+                         "ajax": 1}
+        LOG.info("Auth account and password via logincheck api....")
+        try:
+            self.baseurl = "%s://%s:%s" % (self.http_scheme, self.http_host,
+                                           self.http_port)
+            endpoint = self.baseurl + '/logincheck'
+        except socket.error, msg:
+            LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
+        except OSError:
+            LOG.error("Connection refused: %s\n , terminating program" % socket_error)
+
+        resp = requests.post(endpoint,
+                             verify=False,
+                             data=payload_login)
+
+        if resp.status_code != requests.codes.ok:
+            LOG.error("Error: API: /logincheck status code is not 200")
+        else:
+            self.cookies = resp.cookies
+            LOG.info("Auth account and password successed!")
+        return requests.codes.ok
+
+    def logout(self):
+        LOG.debug("This is 'logout' method")
+        endpoint = self.baseurl + '/logout'
+        resp = requests.post(endpoint,
+                             verify=False,
+                             headers=self._headers)
+        resp.cookies.clear()
+        LOG.debug("Log-out and clear cookies : %s" % resp.text)
+        self.net_connect.disconnect()
+        LOG.debug("Disconnect SSH CLI")
+        return requests.codes.ok
+
+    def _add_csrftoken(self):
+        LOG.debug("This is '_add_csrftoken' method")
+        self._header['X-CSRFTOKEN'] = self.cookies['ccsrftoken'].replace("\"", "")
+        self._headers = {"X-CSRFTOKEN": self._header['X-CSRFTOKEN']}
+
+        self._params = {"global": 0,
+                        "access_token": self.access_token}
+
+        LOG.info("FortiOS API key is ready to use")
+
+    def _ftg_init(self):
+        ftg = {'host': self.ssh_host,
+               'port': self.ssh_port,
+               'username': self.ssh_account,
+               'password': self.ssh_password,
+               'device_type': 'fortinet',
+               'verbose': False}
+        self.net_connect = Netmiko(**ftg)
+        self._disable_paging()
+
+    def _disable_paging(self):
+        disable_paging_commands = [
+            "config global",
+            "config system console",
+            "set output standard",
+            "end\nend"
+        ]
+        for command in disable_paging_commands:
+            self.net_connect.send_command_timing(command)
+
+    def use(self, index=None, identity=None):
+        LOG.debug("This is 'use' method")
+
         self.index = index
         self.identity = identity
 
         if self.index is None and self.identity is None:
             LOG.error("You need to specify index or identity to use firewall!")
+            raise ValueError
 
         if self.identity is None:
             self.access_token = self.conf.get(self.fw_identities[self.index]).access_token
@@ -110,111 +169,8 @@ class Driver(object):
             self.ssh_account = self.conf.get(self.identity).ssh_account
             self.ssh_password = self.conf.get(self.identity).ssh_password
 
-        payload_login = {
-            "username": self.http_account,
-            "secretkey": self.http_password,
-            "ajax": 1
-        }
-        LOG.info("Auth account and password via logincheck api....")
-        try:
-            self.endpoint = (self.http_scheme + '://' + self.http_host +
-                             ':' + str(self.http_port) + '/logincheck')
-        except socket.error, msg:
-            LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
-        except RuntimeError:
-            if socket.error.errno != errno.ECONNREFUSED:
-                LOG.error("Connection refused: %s\n , terminating program" % socket_error)
-
-        resp = requests.post(self.endpoint,
-                             verify=False,
-                             data=payload_login)
-
-        if resp.status_code != requests.codes.ok:
-            LOG.error("Error: API: /logincheck status code is not 200")
-        else:
-            self.cookies = resp.cookies
-            LOG.info("Auth account and password successed!")
-
-    def logout(self):
-        LOG.debug("This is 'logout' method")
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) + '/logout')
-        resp = requests.post(self.endpoint,
-                             verify=False,
-                             headers=self._headers)
-        resp.cookies.clear()
-        LOG.debug("Log-out and clear cookies : %s" % resp.text)
-        self.net_connect.disconnect()
-        LOG.debug("Disconnect SSH CLI")
-
-    def _generate_api_key(self):
-        """
-        self._headers = {}
-        self._content = {}
-
-        print "begin to generate api key..."
-        if self.cookies == {}:
-            return False
-        
-        headers = {
-            "Content-Type": "application/json",
-            "X-CSRFTOKEN": self.cookies['ccsrftoken'].replace("\"","")
-        }
-        payload = {
-            "api-user": "api-admin1"
-        }
-        resp = requests.post("https://172.16.100.254:10443/api/v2/monitor/system/api-user/generate-key",
-                           params={"vdom": "root"},
-                           verify=False,
-                           cookies=self.cookies,
-                           headers=headers,
-                           json=payload)
-                                            
-        self._content = json.loads(resp.text)
-        self._api_token = str(self._content['results']['access_token'])
-        self._header['Authorization'] = "Bearer " + self._api_token
-        """
-        LOG.debug("This is '_generate_api_key' method")
-        self._header['X-CSRFTOKEN'] = self.cookies['ccsrftoken'].replace("\"", "")
-        self._headers = {
-                         #   "Authorization": self._header['Authorization'],
-                         "X-CSRFTOKEN": self._header['X-CSRFTOKEN']
-                         }
-
-        self._params = {
-                        "global": 1,
-                        "access_token": self.access_token
-                        }
-
-        LOG.info("FortiOS API key is ready to use")
-
-    def _ftg_init(self):
-        ftg = {
-            'host': self.ssh_host,
-            'port': self.ssh_port,
-            'username': self.ssh_account,
-            'password': self.ssh_password,
-            'device_type': 'fortinet',
-            'verbose': False
-        }
-        self.net_connect = Netmiko(**ftg)
-        self._disable_paging()
-
-    def _disable_paging(self):
-        disable_paging_commands = [
-            "config global",
-            "config system console",
-            "set output standard",
-            "end",
-            "end"
-        ]
-        for command in disable_paging_commands:
-            self.net_connect.send_command_timing(command)
-
-    def use(self, index=None, identity=None):
-        LOG.debug("This is 'use' method")
-        self._login(index, identity)
-        self._generate_api_key()
+        self._login()
+        self._add_csrftoken()
         self._ftg_init()
 
     def info(self):
@@ -253,18 +209,16 @@ class Driver(object):
             'config global',
             'config system vdom-property',
             'show | grep edit',
-            'end\nend'
+            'end',
+            'end'
         ]
         for command in command_set:
+            clioutput = self.net_connect.send_command_timing(command)
             if command == command_set[2]:
-                clioutput = self.net_connect.send_command_timing(command)
                 output = clioutput.encode('utf-8')
-            else:
-                self.net_connect.send_command_timing(command)
-
-            if 'fail' in output or 'Unknown' in output:
-                LOG.error("%s" % output)
-                raise RuntimeError
+                if 'fail' in output or 'Unknown' in output:
+                    LOG.error("%s" % output)
+                    raise RuntimeError
 
         prog = re.compile('edit \"(.*)\"', re.MULTILINE)
 
@@ -272,17 +226,18 @@ class Driver(object):
             exist_vdoms.append(result.group(1))
         return exist_vdoms
 
-    def add_vdom(self, name=None):
-        clioutput = output = ''
+    def add_vdom(self, name):
         LOG.info("This is 'add_vdom' method")
-        exist_vdoms = self._get_vdom_without_print()
 
         if name is None:
             LOG.error("you need to provide VDOM name!")
+            raise RuntimeError("you need to provide VDOM name")
+
+        exist_vdoms = self._get_vdom_without_print()
 
         if name in exist_vdoms:
             LOG.error("This vdom : '%s' is already exist!!" % name)
-            raise RuntimeError
+            raise Exception
 
         sub_command = "edit %s" % name
         command_set = [
@@ -291,49 +246,26 @@ class Driver(object):
             'end'
         ]
         for command in command_set:
+            clioutput = self.net_connect.send_command_timing(command)
             if command == command_set[1]:
-                clioutput = self.net_connect.send_command_timing(command)
                 output = clioutput.encode('utf-8')
-            else:
-                self.net_connect.send_command_timing(command)
-            if 'fail' in output or 'Unknown' in output:
-                LOG.error("command: %s , respond: %s" % (command, clioutput))
-                raise RuntimeError
-        print("+-----------------------------------------------------+")
-        print "FTG Console : %s" % output
+                if 'fail' in output or 'Unknown' in output:
+                    LOG.error("command: %s , respond: %s" % (command, clioutput))
+                    raise RuntimeError
+                print("+-----------------------------------------------------+")
+                print "FTG Console : %s" % output
         LOG.info("VDOM: %s Created!" % name)
         return 0
 
-    def del_vdom(self, vdom='root', name=None):
-        if name is None:
-            LOG.error("you need to provide ip/subnet/fqdn \
-                   to delete address from firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/address/') + name
-
-        resp = requests.delete(self.endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
-        else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+    def del_vdom(self, name, vdom='root'):
+        """Not Implemented"""
+        raise NotImplementedError
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/address')
-        resp = requests.get(self.endpoint,
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address'
+        resp = requests.get(endpoint,
                             params=self._params,
                             verify=False,
                             headers=self._headers)
@@ -346,23 +278,23 @@ class Driver(object):
                 return content
             except RuntimeError:
                 LOG.error("Unknown error when parsing resp.text")
+            finally:
+                self.logout()
         else:
             LOG.error("Resp text : %s" % resp.text)
             LOG.error("Resp reason : %s" % resp.reason)
-            return resp.raise_for_status()
+            return resp.ok
 
-    def add_addr(self, vdom='root', payload=None):
+    def add_addr(self, payload, vdom='root'):
         if payload is None:
-            LOG.error("Error: you need to provide ip/subnet/fqdn and type \
-                   to add address into firewall!")
+            LOG.error("Error: you need to provide ip/subnet/fqdn and type "
+                      "to add address into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/address')
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address'
 
-        resp = requests.post(self.endpoint,
+        resp = requests.post(endpoint,
                              params=self._params,
                              json=payload,
                              verify=False,
@@ -373,20 +305,18 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
-    def del_addr(self, vdom='root', name=None):
+    def del_addr(self, name, vdom='root'):
         if name is None:
-            LOG.error("you need to provide ip/subnet/fqdn \
-                   to delete address from firewall!")
+            LOG.error("you need to provide ip/subnet/fqdn "
+                      "to delete address from firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/address/') + name
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address/'
 
-        resp = requests.delete(self.endpoint,
+        resp = requests.delete(endpoint,
                                params=self._params,
                                verify=False,
                                headers=self._headers)
@@ -396,20 +326,18 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
-    def set_addr(self, vdom='root', name=None, payload=None):
+    def set_addr(self, name, payload, vdom='root'):
         if name is None or payload is None:
-            LOG.error("you need to provide ip/subnet/fqdn and type \
-                   to update address into firewall!")
+            LOG.error("you need to provide ip/subnet/fqdn and type "
+                      "to update address into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is set_addr method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/address/') + name
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address/' + name
 
-        resp = requests.put(self.endpoint,
+        resp = requests.put(endpoint,
                             params=self._params,
                             json=payload,
                             verify=False,
@@ -420,15 +348,13 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
     def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_vip' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/vip/')
-        resp = requests.get(self.endpoint,
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/'
+        resp = requests.get(endpoint,
                             params=self._params,
                             verify=False,
                             headers=self._headers)
@@ -441,23 +367,23 @@ class Driver(object):
                 return content
             except RuntimeError:
                 LOG.error("Unknown error when parsing resp.text")
+            finally:
+                self.logout()
         else:
             LOG.error("Resp text : %s" % resp.text)
             LOG.error("Resp reason : %s" % resp.reason)
-            return resp.raise_for_status()
+            return resp.ok
 
-    def add_vip(self, vdom='root', payload=None):
+    def add_vip(self, payload, vdom='root'):
         if payload is None:
-            LOG.error("you need to provide something \
-                   to add virtual IP into firewall!")
+            LOG.error("you need to provide something "
+                      "to add virtual IP into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is add_vip method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/vip/')
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/'
 
-        resp = requests.post(self.endpoint,
+        resp = requests.post(endpoint,
                              params=self._params,
                              json=payload,
                              verify=False,
@@ -468,20 +394,18 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
-    def del_vip(self, vdom='root', name=None):
+    def del_vip(self, name, vdom='root'):
         if name is None:
             LOG.error("you need to VIP name \
                    to delete virtual ip from firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/vip/') + name
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/' + name
 
-        resp = requests.delete(self.endpoint,
+        resp = requests.delete(endpoint,
                                params=self._params,
                                verify=False,
                                headers=self._headers)
@@ -493,18 +417,16 @@ class Driver(object):
             LOG.info("Resp text is : %s" % resp.text)
         return resp.status_code
 
-    def set_vip(self, vdom='root', name=None, payload=None):
+    def set_vip(self, name, payload, vdom='root'):
         if payload is None or name is None:
             LOG.error("you need to provide something \
                    to update virtual IP into firewall!")
 
         self._params["vdom"] = vdom
         LOG.info("This is set_vip method, vdom=%s" % vdom)
-        self.endpoint = (self.http_scheme + '://' + self.http_host +
-                         ':' + str(self.http_port) +
-                         '/api/v2/cmdb/firewall/vip/') + name
+        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/' + name
 
-        resp = requests.put(self.endpoint,
+        resp = requests.put(endpoint,
                             params=self._params,
                             json=payload,
                             verify=False,
@@ -515,7 +437,7 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
     def get_vipgrp(self, vdom='root'):
         """Not Implemented"""
