@@ -77,6 +77,8 @@ class Driver(object):
         try:
             self.baseurl = "%s://%s:%s" % (self.http_scheme, self.http_host,
                                            self.http_port)
+            self.cmdburl = '/api/v2/cmdb/'
+
             endpoint = self.baseurl + '/logincheck'
         except socket.error, msg:
             LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
@@ -196,6 +198,8 @@ class Driver(object):
     def get_vdom(self):
         LOG.info("This is 'get_vdom' method")
         exist_vdoms = self._get_vdom_without_print()
+
+        # NOTE(tonycheng): Not a perfect solution, need to be discussed
         print("+--------------- Get VDOM -----------------------------------+")
         print("VDOMs:\n-------------------------------------------------------------")
         for exist_vdom in exist_vdoms:
@@ -216,7 +220,7 @@ class Driver(object):
             clioutput = self.net_connect.send_command_timing(command)
             if command == command_set[2]:
                 output = clioutput.encode('utf-8')
-                if 'fail' in output or 'Unknown' in output:
+                if 'Command fail' in output or 'Unknown action' in output:
                     LOG.error("%s" % output)
                     raise RuntimeError
 
@@ -249,22 +253,22 @@ class Driver(object):
             clioutput = self.net_connect.send_command_timing(command)
             if command == command_set[1]:
                 output = clioutput.encode('utf-8')
-                if 'fail' in output or 'Unknown' in output:
+                if 'Command fail' in output or 'Unknown action' in output:
                     LOG.error("command: %s , respond: %s" % (command, clioutput))
                     raise RuntimeError
                 print("+-----------------------------------------------------+")
                 print "FTG Console : %s" % output
         LOG.info("VDOM: %s Created!" % name)
-        return 0
+        return True
 
-    def del_vdom(self, name, vdom='root'):
+    def del_vdom(self, name, vdom):
         """Not Implemented"""
         raise NotImplementedError
 
     def get_addr(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address'
+        endpoint = self.baseurl + self.cmdburl + '/firewall/address'
         resp = requests.get(endpoint,
                             params=self._params,
                             verify=False,
@@ -292,7 +296,7 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address'
+        endpoint = self.baseurl + self.cmdburl + '/firewall/address'
 
         resp = requests.post(endpoint,
                              params=self._params,
@@ -314,7 +318,7 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address/'
+        endpoint = self.baseurl + self.cmdburl + '/firewall/address/'
 
         resp = requests.delete(endpoint,
                                params=self._params,
@@ -335,7 +339,7 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is set_addr method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/address/' + name
+        endpoint = self.baseurl + self.cmdburl + '/firewall/address/' + name
 
         resp = requests.put(endpoint,
                             params=self._params,
@@ -353,7 +357,7 @@ class Driver(object):
     def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
         LOG.info("This is 'get_vip' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/'
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/'
         resp = requests.get(endpoint,
                             params=self._params,
                             verify=False,
@@ -381,7 +385,7 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is add_vip method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/'
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/'
 
         resp = requests.post(endpoint,
                              params=self._params,
@@ -403,7 +407,7 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/' + name
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
 
         resp = requests.delete(endpoint,
                                params=self._params,
@@ -415,7 +419,7 @@ class Driver(object):
             LOG.error("Resp reason is : %s" % resp.reason)
         else:
             LOG.info("Resp text is : %s" % resp.text)
-        return resp.status_code
+        return resp.ok
 
     def set_vip(self, name, payload, vdom='root'):
         if payload is None or name is None:
@@ -424,7 +428,185 @@ class Driver(object):
 
         self._params["vdom"] = vdom
         LOG.info("This is set_vip method, vdom=%s" % vdom)
-        endpoint = self.baseurl + '/api/v2/cmdb/firewall/vip/' + name
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
+
+        resp = requests.put(endpoint,
+                            params=self._params,
+                            json=payload,
+                            verify=False,
+                            headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def get_policy(self, vdom='root'):
+        self._params["vdom"] = vdom
+        LOG.info("This is 'get_policy' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/'
+        resp = requests.get(endpoint,
+                            params=self._params,
+                            verify=False,
+                            headers=self._headers)
+        if resp.ok:
+            try:
+                content = literal_eval(resp.text)
+                print(content)
+
+                # NOTE(tonycheng): You can use "content['results'][10]" to get value
+                return content
+            except RuntimeError:
+                LOG.error("Unknown error when parsing resp.text")
+            finally:
+                self.logout()
+        else:
+            LOG.error("Resp text : %s" % resp.text)
+            LOG.error("Resp reason : %s" % resp.reason)
+            return resp.ok
+
+    def add_policy(self, payload, vdom='root'):
+        if payload is None:
+            LOG.error("you need to provide something "
+                      "to add policy into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is add_policy method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/'
+
+        resp = requests.post(endpoint,
+                             params=self._params,
+                             json=payload,
+                             verify=False,
+                             headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def del_policy(self, mkey, vdom='root'):
+        if mkey is None:
+            LOG.error("you need to provide policy id \
+                   to delete policy from firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'del_policy' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
+
+        resp = requests.delete(endpoint,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def set_policy(self, mkey, payload, vdom='root'):
+        if payload is None or mkey is None:
+            LOG.error("you need to provide something \
+                   to update policy into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is set_policy method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
+
+        resp = requests.put(endpoint,
+                            params=self._params,
+                            json=payload,
+                            verify=False,
+                            headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def get_service(self, vdom='root'):
+        self._params["vdom"] = vdom
+        LOG.info("This is 'get_service' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/'
+        resp = requests.get(endpoint,
+                            params=self._params,
+                            verify=False,
+                            headers=self._headers)
+        if resp.ok:
+            try:
+                content = literal_eval(resp.text)
+                print(content)
+
+                # NOTE(tonycheng): You can use "content['results'][10]" to get value
+                return content
+            except RuntimeError:
+                LOG.error("Unknown error when parsing resp.text")
+            finally:
+                self.logout()
+        else:
+            LOG.error("Resp text : %s" % resp.text)
+            LOG.error("Resp reason : %s" % resp.reason)
+            return resp.ok
+
+    def add_service(self, payload, vdom='root'):
+        if payload is None:
+            LOG.error("you need to provide something "
+                      "to add service into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'add_service' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/'
+
+        resp = requests.post(endpoint,
+                             params=self._params,
+                             json=payload,
+                             verify=False,
+                             headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def del_service(self, name, vdom='root'):
+        if name is None:
+            LOG.error("you need to provide service name \
+                   to delete service from firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'del_service' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
+
+        resp = requests.delete(endpoint,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def set_service(self, name, payload, vdom='root'):
+        if payload is None or name is None:
+            LOG.error("you need to provide something \
+                   to update service into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'set_service' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
 
         resp = requests.put(endpoint,
                             params=self._params,
@@ -440,8 +622,93 @@ class Driver(object):
         return resp.ok
 
     def get_vipgrp(self, vdom='root'):
-        """Not Implemented"""
-        raise NotImplementedError
+        self._params["vdom"] = vdom
+        LOG.info("This is 'get_vipgrp' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp'
+        resp = requests.get(endpoint,
+                            params=self._params,
+                            verify=False,
+                            headers=self._headers)
+        if resp.ok:
+            try:
+                content = literal_eval(resp.text)
+                print(content)
+
+                # NOTE(tonycheng): You can use "content['results'][10]" to get value
+                return content
+            except RuntimeError:
+                LOG.error("Unknown error when parsing resp.text")
+            finally:
+                self.logout()
+        else:
+            LOG.error("Resp text : %s" % resp.text)
+            LOG.error("Resp reason : %s" % resp.reason)
+            return resp.ok
+
+    def add_vipgrp(self, payload, vdom='root'):
+        if payload is None:
+            LOG.error("you need to provide something "
+                      "to add vip group into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'add_vipgrp' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/'
+
+        resp = requests.post(endpoint,
+                             params=self._params,
+                             json=payload,
+                             verify=False,
+                             headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def del_vipgrp(self, name, vdom='root'):
+        if name is None:
+            LOG.error("you need to provide vipgrp name \
+                   to delete service from firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'del_vipgrp' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
+
+        resp = requests.delete(endpoint,
+                               params=self._params,
+                               verify=False,
+                               headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
+
+    def set_vipgrp(self, name, payload, vdom='root'):
+        if payload is None or name is None:
+            LOG.error("you need to provide something \
+                   to update vip group into firewall!")
+
+        self._params["vdom"] = vdom
+        LOG.info("This is 'set_vipgrp' method, vdom=%s" % vdom)
+        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
+
+        resp = requests.put(endpoint,
+                            params=self._params,
+                            json=payload,
+                            verify=False,
+                            headers=self._headers)
+        if not resp.ok:
+            LOG.error("Return Code is : %s" % resp.status_code)
+            LOG.error("Resp text is : %s" % resp.text)
+            LOG.error("Resp reason is : %s" % resp.reason)
+        else:
+            LOG.info("Resp text is : %s" % resp.text)
+        return resp.ok
 
     def save_config(self, vdom='root'):
         """Not Implemented"""
