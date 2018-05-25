@@ -41,6 +41,16 @@ pip install -r requirements.txt
 python setup.py develop
 ```
 
+### Install Customize module - netmiko (CloudCube version)
+```
+cd /opt
+git clone https://github.com/TonyChengTW/netmiko.git
+cd netmiko
+git branch checkout v2.1.1-cc-001
+cd dist
+pip install netmiko-2.1.1-cc.tar.gz
+```
+
 ## Install backend drivers
 ```
 HOW?
