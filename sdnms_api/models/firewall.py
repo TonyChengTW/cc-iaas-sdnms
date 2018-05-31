@@ -9,23 +9,23 @@ class FirewallAddressModel(SAModel):
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(255), nullable=False, unique=True)
-    type = sa.Column(sa.String(128), nullable=False)
+    addrtype = sa.Column(sa.String(128), nullable=False)
     content = sa.Column(sa.String(255), nullable=False)
     interface = sa.Column(sa.String(15), nullable=False)
-    comment = sa.Column(sa.Text)
+    comments = sa.Column(sa.Text)
 
-    def __init__(self, name, type, content, interface, comment):
+    def __init__(self, name, addrtype, content, interface, comments):
         self.name = name
-        self.type = type
+        self.addrtype = addrtype
         self.content = content
         self.interface = interface
-        self.comment = comment
+        self.comments = comments
 
     @property
     def as_dict(self):
         return {
             'name': self.name,
-            'type': self.type,
+            'address type': self.addrtype,
             'content': self.content,
             'interface': self.interface,
             'comment': self.comment
@@ -33,8 +33,6 @@ class FirewallAddressModel(SAModel):
 
     @classmethod
     def get_list(cls, session):
-        models = []
-
         with session.begin():
             query = session.query(cls)
             models = query.all()
@@ -43,8 +41,6 @@ class FirewallAddressModel(SAModel):
 
     @classmethod
     def get(cls, session, id):
-        model = {}
-
         with session.begin():
             query = session.query(cls)
             model = query.filter(cls.id == id).one()

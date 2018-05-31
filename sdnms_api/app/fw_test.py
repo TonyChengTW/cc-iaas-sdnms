@@ -40,9 +40,11 @@ def run_test(config_file=None):
 
     vdom = 'tony3'
 
-    """
-    m.call_firewall(method='info')
 
+    # m.call_firewall(method='info')
+
+
+    """
     # -------- Add VDOM ------------------------------------------------------
     name = 'tony3'
     m.call_firewall(method='add_vdom', name=name)
@@ -112,9 +114,10 @@ def run_test(config_file=None):
     m.call_firewall(method='del_vip', vdom=vdom, name=name)
     #m.call_firewall(method='get_vipgrp', vdom=vdom)
     m.call_firewall(method='logout')
+    """
 
     # ------------  Get Policy -----------------------------------------------
-    # m.call_firewall(method='get_policy', vdom=vdom)
+    m.call_firewall(method='get_policy', vdom=vdom)
 
     # ------------  Add Policy -----------------------------------------------
     payload = {
@@ -149,18 +152,20 @@ def run_test(config_file=None):
                 'schedule': 'always',
                 'logtraffic': 'all',
                 'status':'enable',
-                'comment': 'test add/set policy via API'
+                'comments': 'test add/set policy via API'
             }
     # m.call_firewall(method='add_policy', payload=payload, vdom=vdom)
 
     mkey = '4'
     vdom = 'root'
-    m.call_firewall(method='set_policy', mkey=mkey, payload=payload, vdom=vdom)
+    # m.call_firewall(method='set_policy', mkey=mkey, payload=payload, vdom=vdom)
 
     
     # ------------  Delete Policy -----------------------------------------------
-    m.call_firewall(method='del_policy', mkey=mkey, vdom=vdom)
+    # m.call_firewall(method='del_policy', mkey=mkey, vdom=vdom)
 
+
+    """
     # ------------  Get Service -----------------------------------------------
     # m.call_firewall(method='get_service', vdom=vdom)
 
@@ -212,7 +217,7 @@ def run_test(config_file=None):
 # ----------------- Get VIP Group ----------------------------------------------------------
     vdom = 'tony3'
 
-    m.call_firewall(method='get_vipgrp', vdom=vdom)
+    # m.call_firewall(method='get_vipgrp', vdom=vdom)
 
 # ----------------- Add/Set VIP Group ----------------------------------------------------------
     name = 'vipgrp1-add'
@@ -226,10 +231,10 @@ def run_test(config_file=None):
                    {'name': 'vip2'},
                ]
                }
-    #m.call_firewall(method='add_vipgrp', payload=payload, vdom=vdom)
-    #m.call_firewall(method='set_vipgrp', name=name, payload=payload, vdom=vdom)
+    # m.call_firewall(method='add_vipgrp', payload=payload, vdom=vdom)
+    # m.call_firewall(method='set_vipgrp', name=name, payload=payload, vdom=vdom)
     name = 'vipgrp1-add'
-    m.call_firewall(method='del_vipgrp', name=name, vdom=vdom)
+    # m.call_firewall(method='del_vipgrp', name=name, vdom=vdom)
 
 if __name__ == '__main__':
     run_test()

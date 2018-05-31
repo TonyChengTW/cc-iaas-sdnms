@@ -8,6 +8,10 @@ import requests
 from netmiko import Netmiko
 from oslo_config import cfg
 from oslo_log import log
+from sdnms_api.models.manager import DBManager
+from sdnms_api.models.firewall import FirewallAddressModel, FirewallServiceModel
+
+import pdb
 
 LOG = log.getLogger(__name__)
 print("Enter into fw_fortinet_v5_6_3/driver.py")
@@ -16,8 +20,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class Driver(object):
+
     def __init__(self, conf):
-        self.fw_identities = self.identity = ''
+        self.fw_identities = self.identity = self.baseurl = self.cmdburl = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.cookies = {}
@@ -29,7 +34,25 @@ class Driver(object):
         self._load_conf(conf)
         self.conf = conf
 
+        """ Create Tables """
+        self._create_orm()
+
+    def _create_orm(self):
+        connection = "mysql+pymysql://{0}:{1}@{2}:{3}/{4}".format(
+            self.db_username, self.db_password,
+            self.db_address, self.db_port, self.db_name)
+        dbmgr = DBManager(connection)
+        dbmgr.setup()
+
     def _load_conf(self, conf):
+        # Load sdnms_api.ini to fetch database options
+        self.db_address = conf.database.address
+        self.db_port = conf.database.port
+        self.db_username = conf.database.username
+        self.db_password = conf.database.password
+        self.db_name = conf.database.database_name
+
+        # Load fw_fortinet.ini to fetch firewall options
         fwid_opts = [
             cfg.StrOpt('fw',
                        help='firewalls list'),
@@ -74,20 +97,16 @@ class Driver(object):
                          "secretkey": self.http_password,
                          "ajax": 1}
         LOG.info("Auth account and password via logincheck api....")
-        try:
-            self.baseurl = "%s://%s:%s" % (self.http_scheme, self.http_host,
-                                           self.http_port)
-            self.cmdburl = '/api/v2/cmdb/'
+        endpoint = self.baseurl + '/logincheck'
 
-            endpoint = self.baseurl + '/logincheck'
+        try:
+            resp = requests.post(endpoint,
+                                 verify=False,
+                                 data=payload_login)
         except socket.error, msg:
             LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
         except OSError:
             LOG.error("Connection refused: %s\n , terminating program" % socket_error)
-
-        resp = requests.post(endpoint,
-                             verify=False,
-                             data=payload_login)
 
         if resp.status_code != requests.codes.ok:
             LOG.error("Error: API: /logincheck status code is not 200")
@@ -104,7 +123,7 @@ class Driver(object):
                              headers=self._headers)
         resp.cookies.clear()
         LOG.debug("Log-out and clear cookies : %s" % resp.text)
-        self.net_connect.disconnect()
+        # self.net_connect.disconnect()
         LOG.debug("Disconnect SSH CLI")
         return requests.codes.ok
 
@@ -171,9 +190,12 @@ class Driver(object):
             self.ssh_account = self.conf.get(self.identity).ssh_account
             self.ssh_password = self.conf.get(self.identity).ssh_password
 
+        self.baseurl = "%s://%s:%s" % (self.http_scheme, self.http_host, self.http_port)
+        self.cmdburl = '/api/v2/cmdb/'
+
         self._login()
         self._add_csrftoken()
-        self._ftg_init()
+        # self._ftg_init()
 
     def info(self):
         LOG.info("This is 'info' method")
@@ -199,7 +221,7 @@ class Driver(object):
         LOG.info("This is 'get_vdom' method")
         exist_vdoms = self._get_vdom_without_print()
 
-        # NOTE(tonycheng): Not a perfect solution, need to be discussed
+        # TODO(tonycheng): Maybe we need a DB to check if the record is exist or not
         print("+--------------- Get VDOM -----------------------------------+")
         print("VDOMs:\n-------------------------------------------------------------")
         for exist_vdom in exist_vdoms:
@@ -453,8 +475,27 @@ class Driver(object):
                             headers=self._headers)
         if resp.ok:
             try:
+                session = dbmgr.session()
                 content = literal_eval(resp.text)
+                # pdb.set_trace()
                 print(content)
+
+                for policy in content['results']:
+                    policy_id = policy['id']
+                    policy_name = policy['name']
+                    policy_srcintf = policy['srcintf']
+                    policy_dstintf = policy['dstintf']
+                    policy_srcaddr = policy['srcaddr']
+                    policy_dstaddr = policy['dstaddr']
+                    policy_service = policy['service']
+                    policy_nat = policy['nat']
+                    policy_action = policy['action']
+                    policy_schedule = policy['schedule']
+                    policy_logtraffic = policy['logtraffic']
+                    policy_status = policy['status']
+                    policy_comments = policy['comments']
+
+
 
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content

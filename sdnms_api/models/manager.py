@@ -15,7 +15,7 @@ class DBManager(object):
         self.DBSession = scoping.scoped_session(
             orm.sessionmaker(
                 bind=self.engine,
-                autocommit=True
+                autocommit=False
             )
         )
 

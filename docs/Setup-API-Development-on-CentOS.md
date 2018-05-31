@@ -3,6 +3,7 @@
 yum install -y epel-release
 yum install -y httpd mod_wsgi
 yum install -y python-pip gcc python-devel
+yum install -y redis
 pip install virtualenv
 ```
 
