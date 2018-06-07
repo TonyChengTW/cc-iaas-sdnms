@@ -9,12 +9,9 @@ from netmiko import Netmiko
 from oslo_config import cfg
 from oslo_log import log
 from sdnms_api.models.manager import DBManager
-from sdnms_api.models.firewall import FirewallAddressModel, FirewallServiceModel
-
-import pdb
+from fw_fortinet_v5_6_3.cache import Cache
 
 LOG = log.getLogger(__name__)
-print("Enter into fw_fortinet_v5_6_3/driver.py")
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -22,20 +19,22 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 class Driver(object):
 
     def __init__(self, conf):
-        self.fw_identities = self.identity = self.baseurl = self.cmdburl = ''
+        self.fw_identities = self.identity = self.baseurl = \
+            self.cmdburl = self.vdom = self.namespace = ''
         self._header = self._headers = self._params = {}
         self.index = int('0')
         self.cookies = {}
         self.access_token = self.http_scheme = self.http_host = self.http_port = self.http_account = \
             self.http_password = self.ssh_host = self.ssh_port = self.ssh_account = \
             self.ssh_password = ''
+        self.cache = self.cache_conn = None
 
         """ Load ini config from CLI parameters """
         self._load_conf(conf)
         self.conf = conf
 
         """ Create Tables """
-        self._create_orm()
+        # self._create_orm()
 
     def _create_orm(self):
         connection = "mysql+pymysql://{0}:{1}@{2}:{3}/{4}".format(
@@ -103,17 +102,16 @@ class Driver(object):
             resp = requests.post(endpoint,
                                  verify=False,
                                  data=payload_login)
+            if resp.status_code != requests.codes.ok:
+                LOG.error("Error: API: /logincheck status code is not 200")
+            else:
+                self.cookies = resp.cookies
+                LOG.info("Auth account and password successed!")
+            return requests.codes.ok
         except socket.error, msg:
             LOG.error("Could not connect with the firewall: %s\n terminating program" % msg)
         except OSError:
             LOG.error("Connection refused: %s\n , terminating program" % socket_error)
-
-        if resp.status_code != requests.codes.ok:
-            LOG.error("Error: API: /logincheck status code is not 200")
-        else:
-            self.cookies = resp.cookies
-            LOG.info("Auth account and password successed!")
-        return requests.codes.ok
 
     def logout(self):
         LOG.debug("This is 'logout' method")
@@ -137,7 +135,7 @@ class Driver(object):
 
         LOG.info("FortiOS API key is ready to use")
 
-    def _ftg_init(self):
+    def _init_ftg(self):
         ftg = {'host': self.ssh_host,
                'port': self.ssh_port,
                'username': self.ssh_account,
@@ -193,9 +191,186 @@ class Driver(object):
         self.baseurl = "%s://%s:%s" % (self.http_scheme, self.http_host, self.http_port)
         self.cmdburl = '/api/v2/cmdb/'
 
+        # Begin to init all procedures
         self._login()
         self._add_csrftoken()
-        # self._ftg_init()
+        self._init_ftg()
+        self.preload_cache()
+
+    def preload_cache(self):
+        LOG.info("Loading firewall data into cache....")
+        # get & write firewall's records into Redis
+        try:
+            # cache vdoms
+            self.cache = Cache()
+            self.cache_conn = self.cache.create_redis_connection()
+            self.cache_conn.flushdb()
+
+            vdoms = self.get_vdom_without_print()
+
+            for vdom in vdoms:
+                namespace = self.http_host + "-" + \
+                                 'vdoms' + "-" + vdom
+                value_vdom = {"name": vdom}
+                self.cache.set_cache(namespace=namespace, value=value_vdom)
+
+                # cache addresses
+                content = self.get_addr(vdom=vdom)
+
+                for result in content['results']:
+                    namespace = self.http_host + "-" + \
+                                     vdom + "-" + \
+                                     'addresses' + "-" + \
+                                     result['name']
+                    key_addr_name = result['name']
+                    key_addr_type = result['type']
+                    key_addr_startip = result['start-ip']
+                    key_addr_endip = result['end-ip']
+                    key_addr_subnet = result['subnet']
+                    key_addr_fqdn = result['fqdn']
+                    key_addr_wildcard = result['wildcard']
+                    key_addr_wildcardfqdn = result['wildcard-fqdn']
+                    key_addr_comment = result['comment']
+                    value_addr = {"name": key_addr_name,
+                                  "type": key_addr_type,
+                                  "start-ip": key_addr_startip,
+                                  "end-ip": key_addr_endip,
+                                  "subnet": key_addr_subnet,
+                                  "fqdn": key_addr_fqdn,
+                                  "wildcard": key_addr_wildcard,
+                                  "wildcard-fqdn": key_addr_wildcardfqdn,
+                                  "comment": key_addr_comment
+                                  }
+                    self.cache.set_cache(namespace=namespace, value=value_addr)
+
+                # cache services
+                content = self.get_service(vdom=vdom)
+
+                for result in content['results']:
+                    namespace = self.http_host + "-" + \
+                                     vdom + "-" + \
+                                     'services' + "-" + \
+                                     result['name']
+                    key_service_name = result['name']
+                    key_service_category = result['category']
+                    key_service_protocol = result['protocol']
+                    key_servic_tcpportrangee = result['tcp-portrange']
+                    key_service_udpportrange = result['udp-portrange']
+                    key_service_sctpportrange = result['sctp-portrange']
+                    key_service_iprange = result['iprange']
+                    key_service_fqdn = result['fqdn']
+                    key_service_icmptype = result['icmptype']
+                    key_service_protocolnumber = result['protocol-number']
+                    key_service_comment = result['comment']
+                    value_service = {"name": key_service_name,
+                                     "category": key_service_category,
+                                     "protocol": key_service_protocol,
+                                     "tcp-portrange": key_servic_tcpportrangee,
+                                     "udp-portrange": key_service_udpportrange,
+                                     "sctp-portrange": key_service_sctpportrange,
+                                     "iprange": key_service_iprange,
+                                     "fqdn": key_service_fqdn,
+                                     "icmptype": key_service_icmptype,
+                                     "protocol-number": key_service_protocolnumber,
+                                     "comment": key_service_comment
+                                     }
+                    self.cache.set_cache(namespace=namespace, value=value_service)
+
+                # cache policies
+                content = self.get_policy(vdom=vdom)
+
+                for result in content['results']:
+                    namespace = self.http_host + "-" + \
+                                     vdom + "-" + \
+                                     'policies' + "-" + \
+                                     str(result['name'])
+                    key_policy_id = result['policyid']
+                    key_policy_name = result['name']
+                    key_policy_srcintf = result['srcintf']
+                    key_policy_dstintf = result['dstintf']
+                    key_policy_srcaddr = result['srcaddr']
+                    key_policy_dstaddr = result['dstaddr']
+                    key_policy_schedule = result['schedule']
+                    key_policy_service = result['service']
+                    key_policy_action = result['action']
+                    key_policy_nat = result['nat']
+                    key_policy_status = result['status']
+                    key_policy_logtraffic = result['logtraffic']
+                    key_policy_comments = result['comments']
+
+                    value_policy = {"policyid": key_policy_id,
+                                    "name": key_policy_name,
+                                    "srcintf": key_policy_srcintf,
+                                    "dstintf": key_policy_dstintf,
+                                    "srcaddr": key_policy_srcaddr,
+                                    "dstaddr": key_policy_dstaddr,
+                                    "schedule": key_policy_schedule,
+                                    "service": key_policy_service,
+                                    "action": key_policy_action,
+                                    "nat": key_policy_nat,
+                                    "status": key_policy_status,
+                                    "logtraffic": key_policy_logtraffic,
+                                    "comments": key_policy_comments
+                                    }
+                    self.cache.set_cache(namespace=namespace, value=value_policy)
+
+                # cache vips
+                content = self.get_vip(vdom=vdom)
+
+                for result in content['results']:
+                    namespace = self.http_host + "-" + \
+                                     vdom + "-" + \
+                                     'vips' + "-" + \
+                                     result['name']
+                    key_vip_name = result['name']
+                    key_vip_extintf = result['extintf']
+                    key_vip_extip = result['extip']
+                    key_vip_extport = result['extport']
+                    key_vip_protocol = result['protocol']
+                    key_vip_portforward = result['portforward']
+                    key_vip_mappedip = result['mappedip']
+                    key_vip_mappedport = result['mappedport']
+                    key_vip_type = result['type']
+                    key_vip_natsourcevip = result['nat-source-vip']
+                    key_vip_portmappingtype = result['portmapping-type']
+                    key_vip_comment = result['comment']
+                    value_vip = {"name": key_vip_name,
+                                 "extintf": key_vip_extintf,
+                                 "extip": key_vip_extip,
+                                 "extport": key_vip_extport,
+                                 "protocol": key_vip_protocol,
+                                 "portforward": key_vip_portforward,
+                                 "mappedip": key_vip_mappedip,
+                                 "mappedport": key_vip_mappedport,
+                                 "type": key_vip_type,
+                                 "nat-source-vip": key_vip_natsourcevip,
+                                 "portmapping-type": key_vip_portmappingtype,
+                                 "comment": key_vip_comment
+                                 }
+                    self.cache.set_cache(namespace=namespace, value=value_vip)
+
+                # cache vipgrp
+                content = self.get_vipgrp(vdom=vdom)
+
+                for result in content['results']:
+                    namespace = self.http_host + "-" + \
+                                vdom + "-" + \
+                                'vipgrps' + "-" + \
+                                result['name']
+                    key_vipgrp_name = result['name']
+                    key_vipgrp_interface = result['interface']
+                    key_vipgrp_member = result['member']
+                    key_vipgrp_comments = result['comments']
+                    value_vipgrp = {"name": key_vipgrp_name,
+                                    "interface": key_vipgrp_interface,
+                                    "member": key_vipgrp_member,
+                                    "comments": key_vipgrp_comments
+                                    }
+                    self.cache.set_cache(namespace=namespace, value=value_vipgrp)
+            LOG.info("Load to cache successfully!")
+            return 1
+        except RuntimeError:
+            raise
 
     def info(self):
         LOG.info("This is 'info' method")
@@ -215,20 +390,19 @@ class Driver(object):
             print("+-----------------------------------------------------+")
             print(output)
 
-        return 0
+        return 1
 
     def get_vdom(self):
         LOG.info("This is 'get_vdom' method")
-        exist_vdoms = self._get_vdom_without_print()
+        exist_vdoms = self.get_vdom_without_print()
 
-        # TODO(tonycheng): Maybe we need a DB to check if the record is exist or not
         print("+--------------- Get VDOM -----------------------------------+")
         print("VDOMs:\n-------------------------------------------------------------")
         for exist_vdom in exist_vdoms:
             print exist_vdom
-        return 0
+        return exist_vdoms
 
-    def _get_vdom_without_print(self):
+    def get_vdom_without_print(self):
         exist_vdoms = []
         output = ''
         command_set = [
@@ -259,35 +433,37 @@ class Driver(object):
             LOG.error("you need to provide VDOM name!")
             raise RuntimeError("you need to provide VDOM name")
 
-        exist_vdoms = self._get_vdom_without_print()
-
-        if name in exist_vdoms:
-            LOG.error("This vdom : '%s' is already exist!!" % name)
-            raise Exception
-
-        sub_command = "edit %s" % name
-        command_set = [
-            'config vdom',
-            sub_command,
-            'end'
-        ]
-        for command in command_set:
-            clioutput = self.net_connect.send_command_timing(command)
-            if command == command_set[1]:
-                output = clioutput.encode('utf-8')
-                if 'Command fail' in output or 'Unknown action' in output:
-                    LOG.error("command: %s , respond: %s" % (command, clioutput))
-                    raise RuntimeError
-                print("+-----------------------------------------------------+")
-                print "FTG Console : %s" % output
-        LOG.info("VDOM: %s Created!" % name)
-        return True
+        namespace = self.http_host + "-" + 'vdoms' + "-" + name
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("vdom : '%s' is already exist!!" % name)
+            return False
+        else:
+            sub_command = "edit %s" % name
+            command_set = [
+                'config vdom',
+                sub_command,
+                'end'
+            ]
+            for command in command_set:
+                clioutput = self.net_connect.send_command_timing(command)
+                if command == command_set[1]:
+                    output = clioutput.encode('utf-8')
+                    if 'Command fail' in output or 'Unknown action' in output:
+                        LOG.error("command: %s , respond: %s" % (command, clioutput))
+                        raise RuntimeError
+                    print("+-----------------------------------------------------+")
+                    print "FTG Console : %s" % output
+            value = {'name': name}
+            self.cache.set_cache(namespace=namespace, value=value)
+            LOG.info("VDOM: %s Created!" % name)
+            return True
 
     def del_vdom(self, name, vdom):
         """Not Implemented"""
         raise NotImplementedError
 
     def get_addr(self, vdom='root'):
+        self.vdom = vdom
         self._params["vdom"] = vdom
         LOG.info("This is 'get_addr' method, vdom=%s" % vdom)
         endpoint = self.baseurl + self.cmdburl + '/firewall/address'
@@ -298,8 +474,6 @@ class Driver(object):
         if resp.ok:
             try:
                 content = literal_eval(resp.text)
-                print(content)
-
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content
             except RuntimeError:
@@ -312,69 +486,89 @@ class Driver(object):
             return resp.ok
 
     def add_addr(self, payload, vdom='root'):
+        LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
         if payload is None:
             LOG.error("Error: you need to provide ip/subnet/fqdn and type "
                       "to add address into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'add_addr' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/address'
-
-        resp = requests.post(endpoint,
-                             params=self._params,
-                             json=payload,
-                             verify=False,
-                             headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'addresses-' + payload['name']
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("address : '%s' is already exist!!" % payload['name'])
+            return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/address'
+            resp = requests.post(endpoint,
+                                 params=self._params,
+                                 json=payload,
+                                 verify=False,
+                                 headers=self._headers)
+            if resp.ok:
+                self.cache.set_cache(namespace=namespace, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
     def del_addr(self, name, vdom='root'):
+        LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
         if name is None:
             LOG.error("you need to provide ip/subnet/fqdn "
                       "to delete address from firewall!")
+        namespace = self.http_host + "-" + vdom + "-" + 'addresses-' + name
+        if self.cache.check_cache(namespace=namespace):
+            self._params["vdom"] = vdom
 
-        self._params["vdom"] = vdom
-        LOG.info("This is 'del_addr' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/address/'
+            endpoint = self.baseurl + self.cmdburl + '/firewall/address/'
 
-        resp = requests.delete(endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+            resp = requests.delete(endpoint,
+                                   params=self._params,
+                                   verify=False,
+                                   headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("address : '%s' is not exist!!" % name)
+            return False
 
     def set_addr(self, name, payload, vdom='root'):
+        LOG.info("This is set_addr method, vdom=%s" % vdom)
+
         if name is None or payload is None:
             LOG.error("you need to provide ip/subnet/fqdn and type "
                       "to update address into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is set_addr method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/address/' + name
-
-        resp = requests.put(endpoint,
-                            params=self._params,
-                            json=payload,
-                            verify=False,
-                            headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace_before = self.http_host + "-" + vdom + "-" + 'addresses-' + name
+        namespace_after = self.http_host + "-" + vdom + "-" + 'addresses-' + payload['name']
+        if self.cache.check_cache(namespace=namespace_before):
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/address/' + name
+            resp = requests.put(endpoint,
+                                params=self._params,
+                                json=payload,
+                                verify=False,
+                                headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace_before)
+                self.cache.set_cache(namespace=namespace_after, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("address : '%s' is not exist!!" % name)
+            return False
 
     def get_vip(self, vdom='root'):
         self._params["vdom"] = vdom
@@ -387,8 +581,6 @@ class Driver(object):
         if resp.ok:
             try:
                 content = literal_eval(resp.text)
-                print(content)
-
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content
             except RuntimeError:
@@ -401,69 +593,89 @@ class Driver(object):
             return resp.ok
 
     def add_vip(self, payload, vdom='root'):
+        LOG.info("This is add_vip method, vdom=%s" % vdom)
         if payload is None:
             LOG.error("you need to provide something "
                       "to add virtual IP into firewall!")
-
         self._params["vdom"] = vdom
-        LOG.info("This is add_vip method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/'
-
-        resp = requests.post(endpoint,
-                             params=self._params,
-                             json=payload,
-                             verify=False,
-                             headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'vips-' + payload['name']
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("VIP : '%s' is already exist!!" % payload['name'])
+            return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vip/'
+            resp = requests.post(endpoint,
+                                 params=self._params,
+                                 json=payload,
+                                 verify=False,
+                                 headers=self._headers)
+            if resp.ok:
+                self.cache.set_cache(namespace=namespace, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
     def del_vip(self, name, vdom='root'):
+        LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
         if name is None:
             LOG.error("you need to VIP name \
                    to delete virtual ip from firewall!")
+        namespace = self.http_host + "-" + vdom + "-" + 'vips-' + name
+        if self.cache.check_cache(namespace=namespace):
+            self._params["vdom"] = vdom
 
-        self._params["vdom"] = vdom
-        LOG.info("This is 'del_vip' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
 
-        resp = requests.delete(endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+            resp = requests.delete(endpoint,
+                                   params=self._params,
+                                   verify=False,
+                                   headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("vip : '%s' is not exist!!" % name)
+            return False
 
     def set_vip(self, name, payload, vdom='root'):
+        LOG.info("This is 'set_vip' method, vdom=%s" % vdom)
+
         if payload is None or name is None:
             LOG.error("you need to provide something \
                    to update virtual IP into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is set_vip method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
-
-        resp = requests.put(endpoint,
-                            params=self._params,
-                            json=payload,
-                            verify=False,
-                            headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace_before = self.http_host + "-" + vdom + "-" + 'vips-' + name
+        namespace_after = self.http_host + "-" + vdom + "-" + 'vips-' + payload['name']
+        if self.cache.check_cache(namespace=namespace_before):
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vip/' + name
+            resp = requests.put(endpoint,
+                                params=self._params,
+                                json=payload,
+                                verify=False,
+                                headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace_before)
+                self.cache.set_cache(namespace=namespace_after, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("vip : '%s' is not exist!!" % name)
+            return False
 
     def get_policy(self, vdom='root'):
         self._params["vdom"] = vdom
@@ -475,27 +687,8 @@ class Driver(object):
                             headers=self._headers)
         if resp.ok:
             try:
-                session = dbmgr.session()
+                # session = dbmgr.session()
                 content = literal_eval(resp.text)
-                # pdb.set_trace()
-                print(content)
-
-                for policy in content['results']:
-                    policy_id = policy['id']
-                    policy_name = policy['name']
-                    policy_srcintf = policy['srcintf']
-                    policy_dstintf = policy['dstintf']
-                    policy_srcaddr = policy['srcaddr']
-                    policy_dstaddr = policy['dstaddr']
-                    policy_service = policy['service']
-                    policy_nat = policy['nat']
-                    policy_action = policy['action']
-                    policy_schedule = policy['schedule']
-                    policy_logtraffic = policy['logtraffic']
-                    policy_status = policy['status']
-                    policy_comments = policy['comments']
-
-
 
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content
@@ -509,69 +702,92 @@ class Driver(object):
             return resp.ok
 
     def add_policy(self, payload, vdom='root'):
+        LOG.info("This is add_policy method, vdom=%s" % vdom)
         if payload is None:
             LOG.error("you need to provide something "
                       "to add policy into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is add_policy method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/'
-
-        resp = requests.post(endpoint,
-                             params=self._params,
-                             json=payload,
-                             verify=False,
-                             headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'policies-' + payload['name']
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("policy : '%s' is already exist!!" % payload['name'])
+            return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/policy/'
+            resp = requests.post(endpoint,
+                                 params=self._params,
+                                 json=payload,
+                                 verify=False,
+                                 headers=self._headers)
+            if resp.ok:
+                mkey_value = {'mkey': literal_eval(resp.text)['mkey']}
+                self.cache.set_cache(namespace=namespace, value=payload)
+                self.cache.set_cache(namespace=namespace, value=mkey_value)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
-    def del_policy(self, mkey, vdom='root'):
-        if mkey is None:
-            LOG.error("you need to provide policy id \
-                   to delete policy from firewall!")
-
-        self._params["vdom"] = vdom
+    def del_policy(self, name, vdom='root'):
         LOG.info("This is 'del_policy' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
+        if name is None:
+            LOG.error("you need to provide policy name to delete policy from firewall!")
 
-        resp = requests.delete(endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'policies-' + name
+        if self.cache.check_cache(namespace=namespace):
+            self._params["vdom"] = vdom
+            mkey = str(self.cache.get_cache(namespace=namespace, key='policyid'))
+            endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
+
+            resp = requests.delete(endpoint,
+                                   params=self._params,
+                                   verify=False,
+                                   headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("policy : '%s' is not exist!!" % name)
+            return False
 
-    def set_policy(self, mkey, payload, vdom='root'):
-        if payload is None or mkey is None:
+    def set_policy(self, name, payload, vdom='root'):
+        LOG.info("This is set_policy method, vdom=%s" % vdom)
+
+        if payload is None or name is None:
             LOG.error("you need to provide something \
                    to update policy into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is set_policy method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
-
-        resp = requests.put(endpoint,
-                            params=self._params,
-                            json=payload,
-                            verify=False,
-                            headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace_before = self.http_host + "-" + vdom + "-" + 'policies-' + name
+        namespace_after = self.http_host + "-" + vdom + "-" + 'policies-' + payload['name']
+        if self.cache.check_cache(namespace=namespace_before):
+            mkey = str(self.cache.get_cache(namespace=namespace_before, key='policyid'))
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/policy/' + mkey
+            resp = requests.put(endpoint,
+                                params=self._params,
+                                json=payload,
+                                verify=False,
+                                headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace_before)
+                self.cache.set_cache(namespace=namespace_after, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("policy : '%s' is not exist!!" % name)
+            return False
 
     def get_service(self, vdom='root'):
         self._params["vdom"] = vdom
@@ -584,8 +800,6 @@ class Driver(object):
         if resp.ok:
             try:
                 content = literal_eval(resp.text)
-                print(content)
-
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content
             except RuntimeError:
@@ -598,69 +812,86 @@ class Driver(object):
             return resp.ok
 
     def add_service(self, payload, vdom='root'):
+        LOG.info("This is 'add_service' method, vdom=%s" % vdom)
         if payload is None:
             LOG.error("you need to provide something "
                       "to add service into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'add_service' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/'
-
-        resp = requests.post(endpoint,
-                             params=self._params,
-                             json=payload,
-                             verify=False,
-                             headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'services-' + payload['name']
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("service : '%s' is already exist!!" % payload['name'])
+            return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/'
+            resp = requests.post(endpoint,
+                                 params=self._params,
+                                 json=payload,
+                                 verify=False,
+                                 headers=self._headers)
+            if resp.ok:
+                self.cache.set_cache(namespace=namespace, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
     def del_service(self, name, vdom='root'):
+        LOG.info("This is 'del_service' method, vdom=%s" % vdom)
         if name is None:
             LOG.error("you need to provide service name \
                    to delete service from firewall!")
-
         self._params["vdom"] = vdom
-        LOG.info("This is 'del_service' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
-
-        resp = requests.delete(endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'services-' + name
+        if self.cache.check_cache(namespace=namespace):
+            endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
+            resp = requests.delete(endpoint,
+                                   params=self._params,
+                                   verify=False,
+                                   headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("service : '%s' is not exist!!" % name)
+            return False
 
     def set_service(self, name, payload, vdom='root'):
+        LOG.info("This is 'set_service' method, vdom=%s" % vdom)
         if payload is None or name is None:
             LOG.error("you need to provide something \
                    to update service into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'set_service' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
-
-        resp = requests.put(endpoint,
-                            params=self._params,
-                            json=payload,
-                            verify=False,
-                            headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace_before = self.http_host + "-" + vdom + "-" + 'services-' + name
+        namespace_after = self.http_host + "-" + vdom + "-" + 'services-' + payload['name']
+        if self.cache.check_cache(namespace=namespace_before):
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall.service/custom/' + name
+            resp = requests.put(endpoint,
+                                params=self._params,
+                                json=payload,
+                                verify=False,
+                                headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace_before)
+                self.cache.set_cache(namespace=namespace_after, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("service : '%s' is not exist!!" % name)
+            return False
 
     def get_vipgrp(self, vdom='root'):
         self._params["vdom"] = vdom
@@ -673,8 +904,6 @@ class Driver(object):
         if resp.ok:
             try:
                 content = literal_eval(resp.text)
-                print(content)
-
                 # NOTE(tonycheng): You can use "content['results'][10]" to get value
                 return content
             except RuntimeError:
@@ -687,69 +916,83 @@ class Driver(object):
             return resp.ok
 
     def add_vipgrp(self, payload, vdom='root'):
-        if payload is None:
-            LOG.error("you need to provide something "
-                      "to add vip group into firewall!")
-
-        self._params["vdom"] = vdom
         LOG.info("This is 'add_vipgrp' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/'
-
-        resp = requests.post(endpoint,
-                             params=self._params,
-                             json=payload,
-                             verify=False,
-                             headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace = self.http_host + "-" + vdom + "-" + 'vipgrps-' + payload['name']
+        if self.cache.check_cache(namespace=namespace):
+            LOG.error("vip group : '%s' is already exist!!" % payload['name'])
+            return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            if payload is None:
+                LOG.error("you need to provide something "
+                          "to add vip group into firewall!")
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/'
+            resp = requests.post(endpoint,
+                                 params=self._params,
+                                 json=payload,
+                                 verify=False,
+                                 headers=self._headers)
+            if resp.ok:
+                self.cache.set_cache(namespace=namespace, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
     def del_vipgrp(self, name, vdom='root'):
+        LOG.info("This is 'del_vipgrp' method, vdom=%s" % vdom)
         if name is None:
             LOG.error("you need to provide vipgrp name \
                    to delete service from firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'del_vipgrp' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
-
-        resp = requests.delete(endpoint,
-                               params=self._params,
-                               verify=False,
-                               headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
-        else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+        namespace = self.http_host + "-" + vdom + "-" + 'vipgrps-' + name
+        if self.cache.check_cache(namespace=namespace):
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
+            resp = requests.delete(endpoint,
+                                   params=self._params,
+                                   verify=False,
+                                   headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
 
     def set_vipgrp(self, name, payload, vdom='root'):
+        LOG.info("This is 'set_vipgrp' method, vdom=%s" % vdom)
         if payload is None or name is None:
             LOG.error("you need to provide something \
                    to update vip group into firewall!")
-
-        self._params["vdom"] = vdom
-        LOG.info("This is 'set_vipgrp' method, vdom=%s" % vdom)
-        endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
-
-        resp = requests.put(endpoint,
-                            params=self._params,
-                            json=payload,
-                            verify=False,
-                            headers=self._headers)
-        if not resp.ok:
-            LOG.error("Return Code is : %s" % resp.status_code)
-            LOG.error("Resp text is : %s" % resp.text)
-            LOG.error("Resp reason is : %s" % resp.reason)
+        namespace_before = self.http_host + "-" + vdom + "-" + 'vipgrps-' + name
+        namespace_after = self.http_host + "-" + vdom + "-" + 'vipgrps-' + payload['name']
+        if self.cache.check_cache(namespace=namespace_before):
+            self._params["vdom"] = vdom
+            endpoint = self.baseurl + self.cmdburl + '/firewall/vipgrp/' + name
+            resp = requests.put(endpoint,
+                                params=self._params,
+                                json=payload,
+                                verify=False,
+                                headers=self._headers)
+            if resp.ok:
+                self.cache.del_cache(namespace=namespace_before)
+                self.cache.set_cache(namespace=namespace_after, value=payload)
+                LOG.info("Resp text is : %s" % resp.text)
+                return True
+            else:
+                LOG.error("Return Code is : %s" % resp.status_code)
+                LOG.error("Resp text is : %s" % resp.text)
+                LOG.error("Resp reason is : %s" % resp.reason)
+                return False
         else:
-            LOG.info("Resp text is : %s" % resp.text)
-        return resp.ok
+            LOG.error("VIP group : '%s' is not exist!!" % name)
+            return False
 
     def save_config(self, vdom='root'):
         """Not Implemented"""
